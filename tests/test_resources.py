@@ -14,8 +14,9 @@ with such.A("module to load resources") as it:
 
     @it.should("get_files from corpus")
     def test_get_files_basic():
-        for f in get_files(".."):
-            it.assert_(type(f), str)
+        for f in get_files("."):
+            it.assertEqual(type(f), str)
+            break 
 
 it.createTests(globals())
 
