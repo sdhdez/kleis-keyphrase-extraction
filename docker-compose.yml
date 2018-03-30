@@ -1,0 +1,23 @@
+version: '3'
+services:
+  tf-extras:
+    image: sdavidhdez/docker-tensorflow-py3-extras:latest-py3
+    restart: always
+    container_name: 'tf-keyphrase-extraction'
+    ports:
+      - '8888:8888'
+    volumes:
+      - '.:/notebooks/keyphrase-extraction'
+      - '~/nltk_data:/root/nltk_data'
+      - './volumes/jupyter_notebook_config.py:/root/.jupyter/jupyter_notebook_config.py'
+      - './volumes/.bashrc:/root/.bashrc'
+      - './volumes/.bash_history:/root/.bash_history'
+    # environment:
+    #  - VIRTUAL_HOST=jlab.totum.one
+    #  - VIRTUAL_PORT=8888
+    #  - LETSENCRYPT_HOST= 'jlab.totum.one'
+
+#networks:
+#  default:
+#    external:
+#      name: webproxy
