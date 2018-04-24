@@ -136,35 +136,99 @@ def parse_brat_content(brat_content, lang="en"):
     """Receive raw content in brat format and
     return list with parsed annotations"""
     if lang == "en":
+        # Tokenizing
         tokens, tokens_span = tokenize_en(brat_content["txt"])
+        # Tagging
         tags = tag_text_en(tokens, tokens_span)
+        # Annotated keyphrases
         keyphrases = filter_keyphrases_brat(brat_content["ann"])
+        # For each tagged token
         for tag_i, tag in enumerate(tags):
+            # Get token span
             token_start, token_end = tag[2]
+            # For each keyphrase
             for keyphrase_key in keyphrases:
+                # Get span
                 keyphrase_start, keyphrase_end = keyphrases[keyphrase_key]["keyphrase-span"]
+                # If token belongs to keyphrase
                 if token_start >= keyphrase_start and token_end <= keyphrase_end:
+                    # Add id of keyphrase to token
                     tag[3].append(keyphrase_key)
+                    # Add token index to keyphrase
                     keyphrases[keyphrase_key]["tokens-indices"].append(tag_i)
+    # Return tags and keyphrases
     return tags, keyphrases
 
 def preprocess_dataset(raw_dataset, lang="en"):
     """Receives raw dataset and adds pre-processed dataset"""
     for key in raw_dataset:
         tags, keyphrases = parse_brat_content(raw_dataset[key]["raw"], lang=lang)
+        # Add tagged tokens with ids of keyphrases to dataset
         raw_dataset[key]["tags"] = tags
+        # Add keyphrases with indices of tokens to dataset
         raw_dataset[key]["keyphrases"] = keyphrases
 
 def pos_sequence_from(keyphrase, tags):
-    """Receive keyphrase dict and return PoS sequence"""
-    return list(map(lambda i: tags[i][1], keyphrase["tokens-indices"]))
+    """Receive keyphrase dict and return list of tags"""
+    pos_sequence = list(map(lambda i: tags[i][1], keyphrase["tokens-indices"]))
+    # Special case when tokenization don't match with annotation
+    if pos_sequence == []:
+        tagger = PerceptronTagger()
+        keyphrase_tags = tagger.tag(keyphrase['keyphrase-text'].replace("-", " ").split())
+        pos_sequence = list(map(lambda t: t[1], keyphrase_tags))
+    return pos_sequence
 
 def load_pos_sequences(dataset):
-    """Receives pre-processed dataset and return PoS sequences"""
-    pos_sequences = []
+    """Receive pre-processed dataset and return PoS sequences"""
+    pos_sequences = {}
     if dataset:
+        # FOr each document
         for key in dataset:
+            # For each keyphrase in document
             for keyphrase_id in dataset[key]["keyphrases"]:
-                pos_sequences.append(pos_sequence_from(dataset[key]["keyphrases"][keyphrase_id],
-                                                       dataset[key]["tags"]))
+                # Extract PoS sequence from keyphrase
+                pos_sequence = pos_sequence_from(dataset[key]["keyphrases"][keyphrase_id],
+                                                 dataset[key]["tags"])
+                # Convert list of tags to string o the PoS sequence
+                pos_sequence_str = " ".join(pos_sequence)
+                # Save PoS sequence as list and count of occurrences
+                pos_sequences.setdefault(pos_sequence_str, {"tags": pos_sequence, "count": 0})
+                # Add 1 to count
+                pos_sequences[pos_sequence_str]["count"] += 1
+    # Return list of PoS sequences
     return pos_sequences
+
+def filter_candidates(element, pos_sequences, context_tokens=1):
+    """Receive element from dataset, list of PoS sequences and return list of candidates"""
+    candidates = []
+    tags = list(map(lambda token: token[1], element["tags"]))
+    # Number of tokens
+    tags_len = len(tags)
+    # For each PoS sequence
+    for key, pos_seq in pos_sequences.items():
+        # Length of sequence
+        pos_seq_len = len(pos_seq["tags"])
+        # Candidate length
+        candidates_len = tags_len - (pos_seq_len - 1)
+        # For each possible candidates
+        for start in range(0, candidates_len):
+            # Offset
+            end = start + pos_seq_len
+            # If match
+            if tags[start:end] == pos_seq["tags"]:
+                # Add candidate
+                candidates.append({
+                    "span": (start, end),
+                    "context-span": (min(start, max(start - context_tokens, 0)),
+                                     min(end + context_tokens, tags_len - 1)),
+                    "pos_seq_id": key
+                })
+    return candidates
+
+def filter_all_candidates(dataset, pos_sequences, context_tokens=1):
+    """Receive dataset, list of PoS sequences and add candidates to dataset"""
+    # For each document
+    for key in dataset:
+        # Filter candidates from document in dataset
+        candidates = filter_candidates(dataset[key], pos_sequences, context_tokens=context_tokens)
+        dataset[key]["candidates"] = candidates

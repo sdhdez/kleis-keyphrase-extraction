@@ -3,7 +3,7 @@
 Generic class to load corpus.
 
 """
-
+import copy
 import resources.dataset as rd
 
 class Corpus:
@@ -38,7 +38,7 @@ class Corpus:
     @property
     def train(self):
         """Return train dataset"""
-        return self._train
+        return copy.deepcopy(self._train)
 
     @train.deleter
     def train(self):
@@ -52,7 +52,7 @@ class Corpus:
     @property
     def dev(self):
         """Return dev dataset"""
-        return self._dev
+        return copy.deepcopy(self._dev)
 
     @dev.deleter
     def dev(self):
@@ -66,7 +66,7 @@ class Corpus:
     @property
     def test(self):
         """Return test dataset"""
-        return self._test
+        return copy.deepcopy(self._test)
 
     @test.deleter
     def test(self):
@@ -80,7 +80,7 @@ class Corpus:
     @property
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
-        return self._pos_sequences
+        return copy.deepcopy(self._pos_sequences)
 
     @pos_sequences.setter
     def pos_sequences(self, dataset):
@@ -88,7 +88,6 @@ class Corpus:
         returned by rd.parse_brat_content()"""
         if dataset:
             self._pos_sequences = rd.load_pos_sequences(dataset)
-            print(dataset.popitem()[1]["keyphrases"])
         else:
             self._pos_sequences = None
 
@@ -96,3 +95,8 @@ class Corpus:
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
         del self._pos_sequences
+
+    @property
+    def annotated_candidates(self, dataset):
+        """Extract annotated candidate phrases from train dataset"""
+        pass
