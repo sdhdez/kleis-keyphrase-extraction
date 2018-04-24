@@ -15,12 +15,15 @@ class Corpus:
     _train = None
     _dev = None
     _test = None
+    _pos_sequences = None
 
     def __init__(self):
         self._config = rd.load_config_corpus(name=self._name)
         self.load_train()
         self.load_dev()
         self.load_test()
+        # Load pos sequences
+        self.pos_sequences = self._train
 
     @property
     def name(self):
@@ -73,3 +76,23 @@ class Corpus:
     def load_test(self):
         """Placeholder to load test dataset"""
         pass
+
+    @property
+    def pos_sequences(self):
+        """Placeholder to load pos sequences"""
+        return self._pos_sequences
+
+    @pos_sequences.setter
+    def pos_sequences(self, dataset):
+        """Load PoS sequences from dataset, using format
+        returned by rd.parse_brat_content()"""
+        if dataset:
+            self._pos_sequences = rd.load_pos_sequences(dataset)
+            print(dataset.popitem()[1]["keyphrases"])
+        else:
+            self._pos_sequences = None
+
+    @pos_sequences.deleter
+    def pos_sequences(self):
+        """Placeholder to load pos sequences"""
+        del self._pos_sequences

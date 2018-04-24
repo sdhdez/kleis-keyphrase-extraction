@@ -20,6 +20,7 @@ class SemEval2017(Corpus):
                                            [".txt", ".ann", ".xml"],
                                            suffix="txt",
                                            encoding=self._encoding))
+        rd.preprocess_dataset(dataset, lang=self._lang)
         self._train = dataset
 
     def load_dev(self):
@@ -28,6 +29,7 @@ class SemEval2017(Corpus):
                                            [".txt", ".ann", ".xml"],
                                            suffix="txt",
                                            encoding=self._encoding))
+        rd.preprocess_dataset(dataset, lang=self._lang)
         self._dev = dataset
 
     def load_test(self):
@@ -43,7 +45,3 @@ class SemEval2017(Corpus):
         for key, value in dataset_part:
             dataset[key]["raw"]["xml"] = value["raw"]["xml"]
         self._test = dataset
-
-    def load_pos(self):
-        """Dummy method"""
-        pass

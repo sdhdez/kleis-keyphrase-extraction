@@ -155,6 +155,35 @@ with such.A("module to load resources") as it:
         it.assertEqual(len(default_corpus.test), 100)
         it.assertEqual(len(default_corpus.train.popitem()[1]['raw']), 3)
 
+    @it.should("tokenize English sentences")
+    @params("Good muffins cost $3.88\nin New York.  Please buy me\ntwo of them.\nThanks.")
+    def test_tokenize_english(case, text):
+        """Test tokenizing text in English"""
+        tokens, tokens_span = rd.tokenize_en(text)
+        for i, (start, end) in enumerate(tokens_span):
+            case.assertEqual(text[start:end], tokens[i])
+
+    @it.should("tag tokens")
+    @params("Good muffins cost $3.88\nin New York.  Please buy me\ntwo of them.\nThanks.")
+    def test_tag_text_en(case, text):
+        """Test tagging English text"""
+        tokens, tokens_span = rd.tokenize_en(text)
+        tags = rd.tag_text_en(tokens, tokens_span)
+        # Expected tokens
+        case.assertEqual(len(tags), 18)
+        # Expected fields
+        case.assertEqual(len(tags[0]), 4)
+        # Token
+        case.assertIsInstance(tags[0][0], str)
+        # PoSTag
+        case.assertIsInstance(tags[0][1], str)
+        # Span
+        case.assertIsInstance(tags[0][2], tuple)
+        # (start, end)
+        case.assertIsInstance(len(tags[0][2]), 2)
+        # List of terms
+        case.assertIsInstance(tags[0][3], list)
+
 it.createTests(globals())
 
 if __name__ == "__main__":

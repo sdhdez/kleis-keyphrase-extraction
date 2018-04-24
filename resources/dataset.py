@@ -80,7 +80,6 @@ def load_dataset_raw(dataset_name_config, extensions, suffix="txt", encoding="ut
     else:
         yield None, None
 
-# Make test
 def tokenize_en(text):
     """Receive text string and return tokens and spans"""
     tokenizer = TreebankWordTokenizer()
@@ -108,28 +107,30 @@ def tag_text_en(tokens, tokens_span):
         tags.append(tagged + (tokens_span[i], []))
     return tags
 
-def filter_terms_brat(raw_ann):
-    """Receive raw content in brat format and return terms"""
-    filter_terms = map(lambda t: t.split("\t"),
-                       filter(lambda t: t[:1] == "T",
-                              raw_ann.split("\n")))
-    terms = {}
-    for term in filter_terms:
-        term_key = term[0]
+# Make test
+def filter_keyphrases_brat(raw_ann):
+    """Receive raw content in brat format and return keyphrases"""
+    filter_keyphrases = map(lambda t: t.split("\t"),
+                            filter(lambda t: t[:1] == "T",
+                                   raw_ann.split("\n")))
+    keyphrases = {}
+    for keyphrase in filter_keyphrases:
+        keyphrase_key = keyphrase[0]
         # Merge annotations with ";"
-        if ";" in term[1]:
-            label_span = term[1].replace(';', ' ').split()
+        if ";" in keyphrase[1]:
+            label_span = keyphrase[1].replace(';', ' ').split()
             span_str = [min(label_span[1:]), max(label_span[1:])]
         else:
-            label_span = term[1].split()
+            label_span = keyphrase[1].split()
             span_str = label_span[1:]
         label = label_span[0]
         span = (int(span_str[0]), int(span_str[1]))
-        text = term[2]
-        terms[term_key] = {"term-label": label,
-                           "term-span": span,
-                           "term-text": text}
-    return terms
+        text = keyphrase[2]
+        keyphrases[keyphrase_key] = {"keyphrase-label": label,
+                                     "keyphrase-span": span,
+                                     "keyphrase-text": text,
+                                     "tokens-indices": []}
+    return keyphrases
 
 def parse_brat_content(brat_content, lang="en"):
     """Receive raw content in brat format and
@@ -137,11 +138,33 @@ def parse_brat_content(brat_content, lang="en"):
     if lang == "en":
         tokens, tokens_span = tokenize_en(brat_content["txt"])
         tags = tag_text_en(tokens, tokens_span)
-        terms = filter_terms_brat(brat_content["ann"])
-        for tag in tags:
+        keyphrases = filter_keyphrases_brat(brat_content["ann"])
+        for tag_i, tag in enumerate(tags):
             token_start, token_end = tag[2]
-            for term_key in terms:
-                term_start, term_end = terms[term_key]["term-span"]
-                if token_start >= term_start and token_end <= term_end:
-                    tag[3].append(term_key)
-    return tags, terms
+            for keyphrase_key in keyphrases:
+                keyphrase_start, keyphrase_end = keyphrases[keyphrase_key]["keyphrase-span"]
+                if token_start >= keyphrase_start and token_end <= keyphrase_end:
+                    tag[3].append(keyphrase_key)
+                    keyphrases[keyphrase_key]["tokens-indices"].append(tag_i)
+    return tags, keyphrases
+
+def preprocess_dataset(raw_dataset, lang="en"):
+    """Receives raw dataset and adds pre-processed dataset"""
+    for key in raw_dataset:
+        tags, keyphrases = parse_brat_content(raw_dataset[key]["raw"], lang=lang)
+        raw_dataset[key]["tags"] = tags
+        raw_dataset[key]["keyphrases"] = keyphrases
+
+def pos_sequence_from(keyphrase, tags):
+    """Receive keyphrase dict and return PoS sequence"""
+    return list(map(lambda i: tags[i][1], keyphrase["tokens-indices"]))
+
+def load_pos_sequences(dataset):
+    """Receives pre-processed dataset and return PoS sequences"""
+    pos_sequences = []
+    if dataset:
+        for key in dataset:
+            for keyphrase_id in dataset[key]["keyphrases"]:
+                pos_sequences.append(pos_sequence_from(dataset[key]["keyphrases"][keyphrase_id],
+                                                       dataset[key]["tags"]))
+    return pos_sequences
