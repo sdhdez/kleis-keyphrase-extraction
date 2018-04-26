@@ -3,8 +3,9 @@
 Generic class to load corpus.
 
 """
-import copy
 import resources.dataset as rd
+import methods.crf as mc
+import copy
 
 class Corpus:
     """Corpus class"""
@@ -16,6 +17,12 @@ class Corpus:
     _dev = None
     _test = None
     _pos_sequences = None
+    _annotated_candidates_spans = None
+    _annotated_candidates = None
+    _method_features = None
+    _context_tokens = None
+    _crf_tagger = None
+    _crf_method = None
 
     def __init__(self):
         self._config = rd.load_config_corpus(name=self._name)
@@ -24,6 +31,9 @@ class Corpus:
         self.load_test()
         # Load pos sequences
         self.pos_sequences = self._train
+        self.annotated_candidates_spans = self._train
+        # CRF train
+        self.crf_train()
 
     @property
     def name(self):
@@ -80,7 +90,7 @@ class Corpus:
     @property
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
-        return copy.deepcopy(self._pos_sequences)
+        return self._pos_sequences
 
     @pos_sequences.setter
     def pos_sequences(self, dataset):
@@ -97,6 +107,63 @@ class Corpus:
         del self._pos_sequences
 
     @property
-    def annotated_candidates(self, dataset):
+    def annotated_candidates_spans(self):
         """Extract annotated candidate phrases from train dataset"""
-        pass
+        return self._annotated_candidates_spans
+
+    @annotated_candidates_spans.setter
+    def annotated_candidates_spans(self, dataset):
+        """Set annotated candidates_spans"""
+        self._annotated_candidates_spans = rd.filter_all_candidates_spans(dataset,
+                                                                          self._pos_sequences,
+                                                                          annotated=True)
+
+    @annotated_candidates_spans.deleter
+    def annotated_candidates_spans(self):
+        """Delete annotated candidates_spans"""
+        del self._annotated_candidates_spans
+
+    @property
+    def annotated_candidates(self):
+        """Get training features for dataset"""
+        return self._annotated_candidates
+
+    @annotated_candidates.setter
+    def annotated_candidates(self, candidates_spans):
+        """Set training features"""
+        self._annotated_candidates = rd.dataset_features_labels_from(
+            candidates_spans,
+            self._train,
+            context_tokens=self._context_tokens,
+            method=self._method_features)
+
+    @annotated_candidates.deleter
+    def annotated_candidates(self):
+        """Set training features"""
+        del self._annotated_candidates
+
+    def crf_train(self, method="simple", context_tokens=1, crf="pycrfsuite"):
+        """Training CRF"""
+        self._crf_method = crf
+        self._method_features = method
+        self._context_tokens = context_tokens
+        self.annotated_candidates = self._annotated_candidates_spans
+        if self._crf_method == "pycrfsuite":
+            self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates)
+
+    @property
+    def crf_tagger(self):
+        """Return tagger"""
+        return self._crf_tagger
+
+    @crf_tagger.deleter
+    def crf_tagger(self):
+        """Delete tagger"""
+        del self._crf_tagger
+
+    def label_text(self, text):
+        """Labeling method"""
+        keyphrase = []
+        if self._crf_method == "pycrfsuite":
+            keyphrase = mc.pycrfsuite_label(self._crf_tagger, self._pos_sequences, text)
+        return keyphrase

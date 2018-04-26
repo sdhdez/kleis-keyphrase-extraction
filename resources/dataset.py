@@ -174,7 +174,7 @@ def pos_sequence_from(keyphrase, tags):
     # Special case when tokenization don't match with annotation
     if pos_sequence == []:
         tagger = PerceptronTagger()
-        keyphrase_tags = tagger.tag(keyphrase['keyphrase-text'].replace("-", " ").split())
+        keyphrase_tags = tagger.tag(keyphrase['keyphrase-text'].split())
         pos_sequence = list(map(lambda t: t[1], keyphrase_tags))
     return pos_sequence
 
@@ -198,37 +198,201 @@ def load_pos_sequences(dataset):
     # Return list of PoS sequences
     return pos_sequences
 
-def filter_candidates(element, pos_sequences, context_tokens=1):
-    """Receive element from dataset, list of PoS sequences and return list of candidates"""
-    candidates = []
-    tags = list(map(lambda token: token[1], element["tags"]))
-    # Number of tokens
-    tags_len = len(tags)
+def filter_pos_sequences(element, pos_sequences, annotated=False):
+    """Receive element from dataset, list of PoS sequences and return list of candidates_spans"""
+    candidates_spans = []
+    tags = tags_from(element)
     # For each PoS sequence
     for key, pos_seq in pos_sequences.items():
         # Length of sequence
         pos_seq_len = len(pos_seq["tags"])
         # Candidate length
-        candidates_len = tags_len - (pos_seq_len - 1)
-        # For each possible candidates
-        for start in range(0, candidates_len):
+        candidates_spans_len = len(tags) - (pos_seq_len - 1)
+        # For each possible candidates_spans
+        for start in range(0, candidates_spans_len):
             # Offset
             end = start + pos_seq_len
             # If match
             if tags[start:end] == pos_seq["tags"]:
-                # Add candidate
-                candidates.append({
+                candidate_span = {
                     "span": (start, end),
-                    "context-span": (min(start, max(start - context_tokens, 0)),
-                                     min(end + context_tokens, tags_len - 1)),
-                    "pos_seq_id": key
-                })
-    return candidates
+                    "pos-seq-id": key
+                }
+                if annotated:
+                    candidate_span_keyphrase_id = match_candidate_span_keyphrase(
+                        (start, end),
+                        element["tags"][start:end],
+                        element["keyphrases"]
+                    )
+                    candidate_span["keyphrase-id"] = candidate_span_keyphrase_id
+                # Add candidate_span
+                candidates_spans.append(candidate_span)
+    return candidates_spans
 
-def filter_all_candidates(dataset, pos_sequences, context_tokens=1):
-    """Receive dataset, list of PoS sequences and add candidates to dataset"""
+def filter_all_candidates_spans(dataset, pos_sequences, annotated=False, filtering="pos-sequences"):
+    """Receive dataset, list of PoS sequences and add candidates_spans to dataset"""
+    dataset_candidates_spans = {}
     # For each document
     for key in dataset:
-        # Filter candidates from document in dataset
-        candidates = filter_candidates(dataset[key], pos_sequences, context_tokens=context_tokens)
-        dataset[key]["candidates"] = candidates
+        # Filter candidates_spans from document in dataset
+        if filtering == "pos-sequences":
+            dataset_candidates_spans[key] = filter_pos_sequences(dataset[key],
+                                                                 pos_sequences,
+                                                                 annotated=annotated)
+        else:
+            break
+    return dataset_candidates_spans
+
+def tags_from(element):
+    """Receive element from dataset and return separated tags"""
+    tags = list(map(lambda token: token[1], element["tags"]))
+    return tags
+
+def match_candidate_span_keyphrase(segment_span, candidate_span_segment, keyphrases):
+    """Receive element from dataset and return keyphrases ids with token indices"""
+    start, end = segment_span
+    token_keyphrases_ids = map(lambda token: token[3], candidate_span_segment)
+    keyphrases_ids = set(kpid for kps_ids in token_keyphrases_ids for kpid in kps_ids)
+    candidate_span_keyphrase_id = None
+    for kpid in keyphrases_ids:
+        keyphrase_start = min(keyphrases[kpid]["tokens-indices"])
+        keyphrase_end = max(keyphrases[kpid]["tokens-indices"]) + 1
+        if start == keyphrase_start and end == keyphrase_end:
+            candidate_span_keyphrase_id = kpid
+            break
+    return candidate_span_keyphrase_id
+
+def dataset_features_labels_from(candidates_spans, dataset,
+                                 context_tokens=1, method="simple",
+                                 notation="BIO", generic_label=True):
+    """Receive candidates_spans and dataset and return all features from candidates"""
+    dataset_features_labels = {
+        key: candidates_spans_features_labels_from(
+            candidates_spans[key],
+            element,
+            context_tokens=context_tokens,
+            method=method,
+            notation=notation,
+            generic_label=generic_label) \
+            for key, element in dataset.items()
+    }
+    return dataset_features_labels
+
+def candidates_spans_features_labels_from(candidates_spans, element,
+                                          context_tokens=1, method="simple",
+                                          notation="BIO", generic_label=True):
+    """Receive candidate_span list and return list of candidate features"""
+    features_labels = [
+        features_labels_from(candidate_span,
+                             element,
+                             context_tokens=context_tokens,
+                             method=method,
+                             notation=notation,
+                             generic_label=generic_label) \
+                             for candidate_span in candidates_spans
+    ]
+    return features_labels
+
+def features_labels_from(candidate_span, element, context_tokens=1,
+                         method="simple", notation="BIO", generic_label=True):
+    """"Return candidate_span features"""
+    start, end = candidate_span["span"]
+    label = keyphrase_label_from(candidate_span, element, generic_label=generic_label)
+    context_start = min(start, max(start - context_tokens, 0))
+    context_end = end + context_tokens
+    features_labels = []
+    if method == "simple":
+        # Default features
+        tags_segment = element["tags"][context_start:context_end]
+        labels = add_notation(tags_segment, label,
+                              start - context_start,
+                              min(context_end, len(element["tags"])) - end,
+                              notation=notation)
+        for offset, tag in enumerate(tags_segment):
+            token_bc_start = max(offset - context_tokens, 0)
+            features_labels.append(
+                (simple_features(tag,
+                                 context_start + offset,
+                                 len(element["tags"]),
+                                 tags_segment[token_bc_start:offset],
+                                 tags_segment[offset+1:offset + context_tokens + 1]
+                                ),
+                 labels[offset]
+                )
+            )
+    return features_labels
+
+def simple_features(tag, token_index, len_tags, beginning_context, ending_context):
+    """Return list with features from token"""
+    token, postag, _, _ = tag
+    features = [
+        'bias',
+        'token.lower=%s' % token.lower(),
+        'token.suffix[-3:]=%s' % token[-3:],
+        'token.suffix[-2:]=%s' % token[-2:],
+        'token.isupper=%s' % token.isupper(),
+        'token.istitle=%s' % token.istitle(),
+        'token.isdigit=%s' % token.isdigit(),
+        'postag=%s' % postag,
+        'postag[:2]=%s' % postag[:2]
+        ]
+
+    if token_index == 0:
+        features.append('BOS')
+    elif token_index == len_tags - 1:
+        features.append('EOS')
+
+    len_context = len(beginning_context)
+    for i, (token, postag, _, _) in enumerate(beginning_context):
+        context_index = len_context - i
+        features.extend([
+            '-%d:token.lower=%s' % (context_index, token.lower()),
+            '-%d:token.istitle=%s' % (context_index, token.istitle()),
+            '-%d:token.isupper=%s' % (context_index, token.isupper()),
+            '-%d:postag=%s' % (context_index, postag),
+            '-%d:postag[:2]=%s' % (context_index, postag[:2]),
+            ])
+    for context_index, (token, postag, _, _) in enumerate(ending_context, 1):
+        features.extend([
+            '+%d:token.lower=%s' % (context_index, token.lower()),
+            '+%d:token.istitle=%s' % (context_index, token.istitle()),
+            '+%d:token.isupper=%s' % (context_index, token.isupper()),
+            '+%d:postag=%s' % (context_index, postag),
+            '+%d:postag[:2]=%s' % (context_index, postag[:2]),
+            ])
+    return features
+
+def keyphrase_label_from(candidate_span, element, generic_label=True):
+    """Receive candidate_span and element from dataset and return keyphrase label"""
+    label = "NON-KEYPHRASE"
+    if "keyphrase-id" in candidate_span and candidate_span["keyphrase-id"] in element["keyphrases"]:
+        if not generic_label:
+            label = element["keyphrases"][candidate_span["keyphrase-id"]]["keyphrase-label"]
+        else:
+            label = "KEYPHRASE"
+    return label
+
+def add_notation(tags_segment, label, left_context, right_context, notation="BIO"):
+    """Receive segment of tagged tokens and return list of labeled tokens"""
+    labels = []
+    if notation == "BIO":
+        for offset in range(0, len(tags_segment)):
+            if offset < left_context:
+                token_label = "O"
+            elif offset == left_context:
+                token_label = "B-" + label
+            elif offset < len(tags_segment) - right_context:
+                token_label = "I-" + label if label else label
+            else:
+                token_label = "O"
+            labels.append(token_label)
+    return labels
+
+def keyphrases2brat(keyphrases):
+    """Receive keyphrases and return brat string"""
+    brat_str = ""
+    for keyphrase in keyphrases:
+        keyphrase_id, (keyphrase_label, (start, end)), keyphrase_str = keyphrase
+        brat_str += "%s\t%s %s %s\t%s\n" % \
+                    (keyphrase_id, keyphrase_label, start, end, keyphrase_str)
+    return brat_str.strip("\n")
