@@ -9,7 +9,7 @@ Example [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphra
 ### Clone repository.
 
 ```
-git clone git@github.com:snovd/keyphrase-extraction.git
+$ git clone git@github.com:snovd/keyphrase-extraction.git
 ```
 
 ### Datasets
@@ -46,7 +46,7 @@ Default config is:
 ### Test
 
 ```
-python main.py
+$ python main.py
 ```
 
 See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_extraction.ipynb) for more deatils.
@@ -62,3 +62,36 @@ To install requirements.
 ```
 pip install nltk python-crfsuite
 ```
+
+## Optional
+
+### Notebooks
+
+To run the example in the noteooks Keyphrase_extraction.ipynb install JupyterLab
+
+```
+$ pip install jupyterlab
+```
+
+Then run the following command. 
+
+```
+jupyter lab
+```
+
+#### Docker and JupyterLab
+
+You can run the example with this [docker image](https://hub.docker.com/r/sdavidhdez/keyphrase-extraction/) or you ca build it yourself with the Dockerfile.
+
+To run the pre-builded image.
+
+```
+sudo docker run --rm -p '8888:8888' -v '/host/path/to/the/package/keyphrase-extraction/:/home/someuser/notebooks/keyphrase-extraction' -v '/host/path/to/nltk_data:/home/someuser/nltk_data' sdavidhdez/keyphrase-extraction:latest
+```
+
+Copy the displayed token from the command-line, go to http://localhost:8888 and paste the token. 
+
+Change the volumes paths (/host/path/to/the/package/keyphrase-extraction/, /host/path/to/nltk_data:/home/someuser/nltk_data) to whatever you need.
+
+
+
