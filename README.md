@@ -91,7 +91,13 @@ sudo docker run --rm -p '8888:8888' -v '/host/path/to/the/package/keyphrase-extr
 
 Copy the displayed token from the command-line, go to http://localhost:8888 and paste the token. 
 
-Change the volumes paths (/host/path/to/the/package/keyphrase-extraction/, /host/path/to/nltk_data:/home/someuser/nltk_data) to whatever you need.
+Change the volumes paths to whatever you need.
+ - '/host/path/to/the/package/keyphrase-extraction/:/home/someuser/notebooks/keyphrase-extraction'
+ - '/host/path/to/nltk_data:/home/someuser/nltk_data'
+ 
+ There is an example for [docker-compose](https://github.com/snovd/keyphrase-extraction/blob/master/docker-compose.yml)
+ 
+ 
 
 
 
