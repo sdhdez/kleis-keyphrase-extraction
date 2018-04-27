@@ -54,3 +54,9 @@ python main.py
  - Python 3 (Tested: 3.6.5)
  - nltk (Tested: 3.2.5)
  - python-crfsuite (Tested: 0.9.5)
+ 
+Example:
+
+```
+pip install nltk crfsuite
+```
