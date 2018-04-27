@@ -49,6 +49,8 @@ Default config is:
 python main.py
 ```
 
+See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_extraction.ipynb) for more deatils.
+
 ## Requirements 
 
  - Python 3 (Tested: 3.6.5)
