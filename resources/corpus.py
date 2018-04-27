@@ -23,14 +23,25 @@ class Corpus:
     _context_tokens = None
     _crf_tagger = None
     _crf_method = None
+    _filter_min_count = 0
 
     def __init__(self):
         self._config = rd.load_config_corpus(name=self._name)
         self.load_train()
         self.load_dev()
         self.load_test()
+        # self.training()
+        self.load_pos_sequences()
+
+    def load_pos_sequences(self, filter_min_count=0):
+        """Load PoS sequences"""
+        self._filter_min_count = filter_min_count
         # Load pos sequences
         self.pos_sequences = self._train
+
+    def training(self, filter_min_count=0):
+        """Init training"""
+        self.load_pos_sequences(filter_min_count=filter_min_count)
         self.annotated_candidates_spans = self._train
         # CRF train
         self.crf_train()
@@ -90,14 +101,17 @@ class Corpus:
     @property
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
-        return self._pos_sequences
+        return copy.deepcopy(self._pos_sequences)
 
     @pos_sequences.setter
     def pos_sequences(self, dataset):
         """Load PoS sequences from dataset, using format
         returned by rd.parse_brat_content()"""
         if dataset:
-            self._pos_sequences = rd.load_pos_sequences(dataset)
+            self._pos_sequences = {
+                str(key): value \
+                for key, value in filter(lambda ps: ps[1]["count"] > self._filter_min_count,
+                                         rd.load_pos_sequences(dataset).items())}
         else:
             self._pos_sequences = None
 
@@ -149,7 +163,11 @@ class Corpus:
         self._context_tokens = context_tokens
         self.annotated_candidates = self._annotated_candidates_spans
         if self._crf_method == "pycrfsuite":
-            self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates)
+            self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates,
+                                                   name="%s.%s.%s.%s" % ("candidates-model",
+                                                                    self._filter_min_count,
+                                                                    self._method_features,
+                                                                    self._crf_method))
 
     @property
     def crf_tagger(self):
