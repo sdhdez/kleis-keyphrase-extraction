@@ -23,7 +23,7 @@ class Corpus:
     _context_tokens = None
     _crf_tagger = None
     _crf_method = None
-    _filter_min_count = 0
+    _filter_min_count = 1
 
     def __init__(self):
         self._config = rd.load_config_corpus(name=self._name)
@@ -33,13 +33,13 @@ class Corpus:
         # self.training()
         self.load_pos_sequences()
 
-    def load_pos_sequences(self, filter_min_count=0):
+    def load_pos_sequences(self, filter_min_count=1):
         """Load PoS sequences"""
         self._filter_min_count = filter_min_count
         # Load pos sequences
         self.pos_sequences = self._train
 
-    def training(self, filter_min_count=0):
+    def training(self, filter_min_count=1):
         """Init training"""
         self.load_pos_sequences(filter_min_count=filter_min_count)
         self.annotated_candidates_spans = self._train
@@ -101,17 +101,17 @@ class Corpus:
     @property
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
-        return copy.deepcopy(self._pos_sequences)
+        return {str(key): value \
+                for key, value in filter(lambda ps: ps[1]["count"] >= self._filter_min_count,
+                                         self._pos_sequences.items())}
+
 
     @pos_sequences.setter
     def pos_sequences(self, dataset):
         """Load PoS sequences from dataset, using format
         returned by rd.parse_brat_content()"""
         if dataset:
-            self._pos_sequences = {
-                str(key): value \
-                for key, value in filter(lambda ps: ps[1]["count"] > self._filter_min_count,
-                                         rd.load_pos_sequences(dataset).items())}
+            self._pos_sequences = rd.load_pos_sequences(dataset)
         else:
             self._pos_sequences = None
 
@@ -129,7 +129,7 @@ class Corpus:
     def annotated_candidates_spans(self, dataset):
         """Set annotated candidates_spans"""
         self._annotated_candidates_spans = rd.filter_all_candidates_spans(dataset,
-                                                                          self._pos_sequences,
+                                                                          self.pos_sequences,
                                                                           annotated=True)
 
     @annotated_candidates_spans.deleter
@@ -165,9 +165,9 @@ class Corpus:
         if self._crf_method == "pycrfsuite":
             self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates,
                                                    name="%s.%s.%s.%s" % ("candidates-model",
-                                                                    self._filter_min_count,
-                                                                    self._method_features,
-                                                                    self._crf_method))
+                                                                         self._filter_min_count,
+                                                                         self._method_features,
+                                                                         self._crf_method))
 
     @property
     def crf_tagger(self):
@@ -183,5 +183,5 @@ class Corpus:
         """Labeling method"""
         keyphrase = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = mc.pycrfsuite_label(self._crf_tagger, self._pos_sequences, text)
+            keyphrase = mc.pycrfsuite_label(self._crf_tagger, self.pos_sequences, text)
         return keyphrase

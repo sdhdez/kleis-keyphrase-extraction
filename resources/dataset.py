@@ -365,7 +365,9 @@ def simple_features(tag, token_index, len_tags, beginning_context, ending_contex
 def keyphrase_label_from(candidate_span, element, generic_label=True):
     """Receive candidate_span and element from dataset and return keyphrase label"""
     label = "NON-KEYPHRASE"
-    if "keyphrase-id" in candidate_span and candidate_span["keyphrase-id"] in element["keyphrases"]:
+    if "keyphrases" in element and\
+            "keyphrase-id" in candidate_span and \
+            candidate_span["keyphrase-id"] in element["keyphrases"]:
         if not generic_label:
             label = element["keyphrases"][candidate_span["keyphrase-id"]]["keyphrase-label"]
         else:

@@ -78,12 +78,13 @@ def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
                         tags, pos_sequences, notation=notation):
             keyphrase_label_span = labeled_keyphrase_span(
                 (labeled_candidate, candidates_spans[i]),
-                tags
+                tags,
+                notation=notation
             )
             keyphrase_label, (keyphrase_span_start, keyphrase_span_end) = keyphrase_label_span
             keyphrases.append(
                 ("T%d" % (i + 1),
-                 (keyphrase_label[2:], (keyphrase_span_start, keyphrase_span_end)),
+                 (keyphrase_label, (keyphrase_span_start, keyphrase_span_end)),
                  text[keyphrase_span_start:keyphrase_span_end])
             )
     return keyphrases
@@ -106,11 +107,13 @@ def is_keyphrase(labeled_candidate, tags, pos_sequences, notation="BIO"):
             is_valid = True
     return is_valid
 
-def labeled_keyphrase_span(keyphrase, tags):
+def labeled_keyphrase_span(keyphrase, tags, notation="BIO"):
     """Receive labeled keyphrase and return span"""
     labeled_candidate, candidate_spans = keyphrase
     start, end = candidate_spans["span"]
-    label = list(set(labeled_candidate))[0]
+    label = "KEYPHRASE"
+    if notation == "BIO":
+        label = list(set(list(filter(lambda lc: lc != "O", labeled_candidate))))[0][2:]
     _, _, token_span_start, _ = tags[start]
     _, _, token_span_end, _ = tags[end - 1]
     span = (token_span_start[0], token_span_end[1])
