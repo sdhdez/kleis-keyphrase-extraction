@@ -54,11 +54,11 @@ See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_e
 ## Requirements 
 
  - Python 3 (Tested: 3.6.5)
- - nltk (Tested: 3.2.5)
+ - nltk (with corpus) (Tested: 3.2.5)
  - python-crfsuite (Tested: 0.9.5)
  
 To install requirements.
 
 ```
-pip install nltk crfsuite
+pip install nltk python-crfsuite
 ```
