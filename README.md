@@ -57,7 +57,7 @@ See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_e
  - nltk (Tested: 3.2.5)
  - python-crfsuite (Tested: 0.9.5)
  
-Example:
+To install requirements.
 
 ```
 pip install nltk crfsuite
