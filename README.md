@@ -9,7 +9,7 @@ Example [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphra
 ### Clone repository.
 
 ```
-$ git clone git@github.com:snovd/keyphrase-extraction.git
+$ git clone https://github.com/snovd/keyphrase-extraction.git
 ```
 
 ### Datasets
