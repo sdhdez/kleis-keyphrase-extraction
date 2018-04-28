@@ -394,7 +394,17 @@ def keyphrases2brat(keyphrases):
     """Receive keyphrases and return brat string"""
     brat_str = ""
     for keyphrase in keyphrases:
-        keyphrase_id, (keyphrase_label, (start, end)), keyphrase_str = keyphrase
+        keyphrase_id, (keyphrase_label_, (start, end)), keyphrase_str = keyphrase
         brat_str += "%s\t%s %s %s\t%s\n" % \
-                    (keyphrase_id, keyphrase_label, start, end, keyphrase_str)
+                    (keyphrase_id, keyphrase_label_, start, end, keyphrase_str)
     return brat_str.strip("\n")
+
+def keyphrase_label(keyphrase):
+    """Receive keyphrase and return label"""
+    _, (keyphrase_label_, _), _ = keyphrase
+    return keyphrase_label_
+
+def keyphrase_span(keyphrase):
+    """Receive keyphrase and return label"""
+    _, (_, start_end), _ = keyphrase
+    return start_end
