@@ -3,9 +3,9 @@
 Generic class to load corpus.
 
 """
+import copy
 import resources.dataset as rd
 import methods.crf as mc
-import copy
 
 class Corpus:
     """Corpus class"""
@@ -104,7 +104,6 @@ class Corpus:
         return {str(key): value \
                 for key, value in filter(lambda ps: ps[1]["count"] >= self._filter_min_count,
                                          self._pos_sequences.items())}
-
 
     @pos_sequences.setter
     def pos_sequences(self, dataset):
