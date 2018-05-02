@@ -9,7 +9,6 @@ import pycrfsuite
 from config.config import MODELS_PATH
 from resources import dataset as rd
 
-
 def crf_preprocess_candidates(candidates):
     """Receive annotated candidates and return features and labels list"""
     features = []
@@ -53,7 +52,7 @@ def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
     return tagger
 
 def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
-                     method="simple", notation="BIO", generic_label=True):
+                     features_method="simple", tagging_notation="BIO", generic_label=True):
     """Receive tagger, pos sequences and text and return labeled text"""
     tokens, tokens_span = rd.tokenize_en(text)
     tags = rd.tag_text_en(tokens, tokens_span)
@@ -66,8 +65,8 @@ def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
     candidates = rd.candidates_spans_features_labels_from(
         candidates_spans, dataset_element_fake,
         context_tokens=context_tokens,
-        method=method,
-        notation=notation,
+        features_method=features_method,
+        tagging_notation=tagging_notation,
         generic_label=generic_label
     )
     candidates_features, _ = crf_preprocess_candidates(candidates)
@@ -75,11 +74,11 @@ def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
     for i, candidate_feaures in enumerate(candidates_features):
         labeled_candidate = tagger.tag(candidate_feaures)
         if is_keyphrase((labeled_candidate, candidates_spans[i]),
-                        tags, pos_sequences, notation=notation):
+                        tags, pos_sequences, tagging_notation=tagging_notation):
             keyphrase_label_span = labeled_keyphrase_span(
                 (labeled_candidate, candidates_spans[i]),
                 tags,
-                notation=notation
+                tagging_notation=tagging_notation
             )
             keyphrase_label, (keyphrase_span_start, keyphrase_span_end) = keyphrase_label_span
             keyphrases.append(
@@ -89,13 +88,13 @@ def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
             )
     return keyphrases
 
-def is_keyphrase(labeled_candidate, tags, pos_sequences, notation="BIO"):
+def is_keyphrase(labeled_candidate, tags, pos_sequences, tagging_notation="BIO"):
     """Receive labeled candidate and return true or false"""
     labels, candidate_spans = labeled_candidate
     start, end = candidate_spans["span"]
     expected_tokens = end - start
     is_valid = False
-    if notation == "BIO":
+    if tagging_notation == "BIO" or tagging_notation == "BILOU":
         postags = list(map(lambda t: t[1], tags[start:end]))
         labels_valid = list(map(lambda l: l[2:],
                                 filter(lambda l: l != "O" \
@@ -107,12 +106,12 @@ def is_keyphrase(labeled_candidate, tags, pos_sequences, notation="BIO"):
             is_valid = True
     return is_valid
 
-def labeled_keyphrase_span(keyphrase, tags, notation="BIO"):
+def labeled_keyphrase_span(keyphrase, tags, tagging_notation="BIO"):
     """Receive labeled keyphrase and return span"""
     labeled_candidate, candidate_spans = keyphrase
     start, end = candidate_spans["span"]
     label = "KEYPHRASE"
-    if notation == "BIO":
+    if tagging_notation == "BIO" or tagging_notation == "BILOU":
         label = list(set(list(filter(lambda lc: lc != "O", labeled_candidate))))[0][2:]
     _, _, token_span_start, _ = tags[start]
     _, _, token_span_end, _ = tags[end - 1]

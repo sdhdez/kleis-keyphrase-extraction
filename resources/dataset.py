@@ -263,51 +263,51 @@ def match_candidate_span_keyphrase(segment_span, candidate_span_segment, keyphra
     return candidate_span_keyphrase_id
 
 def dataset_features_labels_from(candidates_spans, dataset,
-                                 context_tokens=1, method="simple",
-                                 notation="BIO", generic_label=True):
+                                 context_tokens=1, features_method="simple",
+                                 tagging_notation="BIO", generic_label=True):
     """Receive candidates_spans and dataset and return all features from candidates"""
     dataset_features_labels = {
         key: candidates_spans_features_labels_from(
             candidates_spans[key],
             element,
             context_tokens=context_tokens,
-            method=method,
-            notation=notation,
+            features_method=features_method,
+            tagging_notation=tagging_notation,
             generic_label=generic_label) \
             for key, element in dataset.items()
     }
     return dataset_features_labels
 
 def candidates_spans_features_labels_from(candidates_spans, element,
-                                          context_tokens=1, method="simple",
-                                          notation="BIO", generic_label=True):
+                                          context_tokens=1, features_method="simple",
+                                          tagging_notation="BIO", generic_label=True):
     """Receive candidate_span list and return list of candidate features"""
     features_labels = [
         features_labels_from(candidate_span,
                              element,
                              context_tokens=context_tokens,
-                             method=method,
-                             notation=notation,
+                             features_method=features_method,
+                             tagging_notation=tagging_notation,
                              generic_label=generic_label) \
                              for candidate_span in candidates_spans
     ]
     return features_labels
 
 def features_labels_from(candidate_span, element, context_tokens=1,
-                         method="simple", notation="BIO", generic_label=True):
+                         features_method="simple", tagging_notation="BIO", generic_label=True):
     """"Return candidate_span features"""
     start, end = candidate_span["span"]
     label = keyphrase_label_from(candidate_span, element, generic_label=generic_label)
     context_start = min(start, max(start - context_tokens, 0))
     context_end = end + context_tokens
     features_labels = []
-    if method == "simple":
+    tags_segment = element["tags"][context_start:context_end]
+    labels = add_notation(tags_segment, label,
+                          start - context_start,
+                          min(context_end, len(element["tags"])) - end,
+                          tagging_notation=tagging_notation)
+    if features_method == "simple":
         # Default features
-        tags_segment = element["tags"][context_start:context_end]
-        labels = add_notation(tags_segment, label,
-                              start - context_start,
-                              min(context_end, len(element["tags"])) - end,
-                              notation=notation)
         for offset, tag in enumerate(tags_segment):
             token_bc_start = max(offset - context_tokens, 0)
             features_labels.append(
@@ -320,6 +320,17 @@ def features_labels_from(candidate_span, element, context_tokens=1,
                  labels[offset]
                 )
             )
+    if features_method == "extended":
+        # Extended features
+        for offset, tag in enumerate(tags_segment):
+            token_bc_start = max(offset - context_tokens, 0)
+            features = simple_features(tag,
+                                       context_start + offset,
+                                       len(element["tags"]),
+                                       tags_segment[token_bc_start:offset],
+                                       tags_segment[offset+1:offset + context_tokens + 1]
+                                      )
+            features_labels.append((features, labels[offset]))
     return features_labels
 
 def simple_features(tag, token_index, len_tags, beginning_context, ending_context):
@@ -374,10 +385,10 @@ def keyphrase_label_from(candidate_span, element, generic_label=True):
             label = "KEYPHRASE"
     return label
 
-def add_notation(tags_segment, label, left_context, right_context, notation="BIO"):
+def add_notation(tags_segment, label, left_context, right_context, tagging_notation="BIO"):
     """Receive segment of tagged tokens and return list of labeled tokens"""
     labels = []
-    if notation == "BIO":
+    if tagging_notation == "BIO":
         for offset in range(0, len(tags_segment)):
             if offset < left_context:
                 token_label = "O"
@@ -385,6 +396,22 @@ def add_notation(tags_segment, label, left_context, right_context, notation="BIO
                 token_label = "B-" + label
             elif offset < len(tags_segment) - right_context:
                 token_label = "I-" + label if label else label
+            else:
+                token_label = "O"
+            labels.append(token_label)
+    if tagging_notation == "BILOU":
+        for offset in range(0, len(tags_segment)):
+            if offset < left_context:
+                token_label = "O"
+            elif offset == left_context and \
+                    len(tags_segment) - left_context - right_context == 1:
+                token_label = "U-" + label if label else label
+            elif offset == left_context:
+                token_label = "B-" + label
+            elif offset < len(tags_segment) - right_context - 1:
+                token_label = "I-" + label if label else label
+            elif offset < len(tags_segment) - right_context:
+                token_label = "L-" + label if label else label
             else:
                 token_label = "O"
             labels.append(token_label)

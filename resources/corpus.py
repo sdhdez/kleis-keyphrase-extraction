@@ -19,7 +19,9 @@ class Corpus:
     _pos_sequences = None
     _annotated_candidates_spans = None
     _annotated_candidates = None
-    _method_features = None
+    _generic_label = True
+    _features_method = None
+    _tagging_notation = None
     _context_tokens = None
     _crf_tagger = None
     _crf_method = None
@@ -39,12 +41,18 @@ class Corpus:
         # Load pos sequences
         self.pos_sequences = self._train
 
-    def training(self, filter_min_count=1):
+    def training(self, features_method="simple", tagging_notation="BIO",
+                 context_tokens=1, crf="pycrfsuite", filter_min_count=1,
+                 generic_label=True):
         """Init training"""
+        self._features_method = features_method
         self.load_pos_sequences(filter_min_count=filter_min_count)
         self.annotated_candidates_spans = self._train
         # CRF train
-        self.crf_train()
+        self.crf_train(features_method=features_method,
+                       tagging_notation=tagging_notation,
+                       context_tokens=context_tokens,
+                       generic_label=generic_label, crf=crf)
 
     @property
     def name(self):
@@ -148,25 +156,35 @@ class Corpus:
             candidates_spans,
             self._train,
             context_tokens=self._context_tokens,
-            method=self._method_features)
+            features_method=self._features_method,
+            tagging_notation=self._tagging_notation)
 
     @annotated_candidates.deleter
     def annotated_candidates(self):
         """Set training features"""
         del self._annotated_candidates
 
-    def crf_train(self, method="simple", context_tokens=1, crf="pycrfsuite"):
+    def crf_train(self, features_method="simple",
+                  tagging_notation="BIO", context_tokens=1,
+                  generic_label=True, crf="pycrfsuite"):
         """Training CRF"""
         self._crf_method = crf
-        self._method_features = method
+        self._features_method = features_method
+        self._tagging_notation = tagging_notation
         self._context_tokens = context_tokens
+        self._generic_label = generic_label
         self.annotated_candidates = self._annotated_candidates_spans
+        model_file_name = "%s.%s.%s.%s.ctx%s.lbl%s.%s" % \
+            ("candidates-model",
+             self._filter_min_count,
+             self._features_method,
+             self._tagging_notation.lower(),
+             self._context_tokens,
+             ("generic" if self._generic_label else "annotation"),
+             self._crf_method)
         if self._crf_method == "pycrfsuite":
             self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates,
-                                                   name="%s.%s.%s.%s" % ("candidates-model",
-                                                                         self._filter_min_count,
-                                                                         self._method_features,
-                                                                         self._crf_method))
+                                                   name=model_file_name)
 
     @property
     def crf_tagger(self):
@@ -182,5 +200,8 @@ class Corpus:
         """Labeling method"""
         keyphrase = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = mc.pycrfsuite_label(self._crf_tagger, self.pos_sequences, text)
+            keyphrase = mc.pycrfsuite_label(self._crf_tagger,
+                                            self.pos_sequences,
+                                            text,
+                                            tagging_notation=self._tagging_notation)
         return keyphrase
