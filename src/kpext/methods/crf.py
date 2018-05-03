@@ -6,8 +6,8 @@
 import os
 import pycrfsuite
 
-from config.config import MODELS_PATH
-from resources import dataset as rd
+from kpext.config.config import MODELS_PATH
+from kpext.resources import dataset as rd
 
 def crf_preprocess_candidates(candidates):
     """Receive annotated candidates and return features and labels list"""

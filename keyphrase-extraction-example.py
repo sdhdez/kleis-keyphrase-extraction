@@ -3,7 +3,7 @@
 Execute methods.
 
 """
-import resources.dataset as rd
+import kpext.resources.dataset as rd
 
 def main():
     """Method to run package."""

@@ -4,8 +4,8 @@ import nose2
 from nose2.tools import such
 from nose2.tools.params import params
 
-from resources import dataset as rd
-from resources.semeval2017 import SemEval2017
+from kpext.resources import dataset as rd
+from kpext.resources.semeval2017 import SemEval2017
 
 with such.A("module to load resources") as it:
     @it.has_setup

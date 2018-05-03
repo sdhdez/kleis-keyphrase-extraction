@@ -4,8 +4,8 @@ Generic class to load corpus.
 
 """
 import copy
-import resources.dataset as rd
-import methods.crf as mc
+import kpext.resources.dataset as rd
+import kpext.methods.crf as mc
 
 class Corpus:
     """Corpus class"""

@@ -8,7 +8,7 @@ from pathlib import Path
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tag.perceptron import PerceptronTagger
 
-from config.config import CORPUS, CORPUS_DEFAULT, SEMEVAL2017
+from kpext.config.config import CORPUS, CORPUS_DEFAULT, SEMEVAL2017
 
 def get_files(path_to_files):
     """Walk in path"""
@@ -67,7 +67,7 @@ def load_corpus(name=None):
     corpus = name if name else SEMEVAL2017
     obj = None
     if corpus == SEMEVAL2017:
-        from resources.semeval2017 import SemEval2017
+        from kpext.resources.semeval2017 import SemEval2017
         obj = SemEval2017()
     return obj
 

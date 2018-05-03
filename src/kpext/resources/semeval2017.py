@@ -3,9 +3,9 @@
 Class SemEval2017.
 
 """
-from config.config import SEMEVAL2017
-from resources.corpus import Corpus
-import resources.dataset as rd
+from kpext.config.config import SEMEVAL2017
+from kpext.resources.corpus import Corpus
+import kpext.resources.dataset as rd
 
 class SemEval2017(Corpus):
     """Class for SemEval 2017 Task 10 corpus"""
