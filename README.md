@@ -1,5 +1,6 @@
 # Kleis: Python package for keyphrase extraction
 
+Kleis is a python package to label keyphrases in scientific text. It is named after the ancient greek word [κλείς](https://en.wiktionary.org/w/index.php?title=%CE%BA%CE%BB%CE%B5%CE%AF%CF%82).
 ## Install 
 
 ### Pip
@@ -25,7 +26,7 @@ Note: This method doesn't include pre-trained models, you should
 Example [here](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/master/minimal-example.ipynb)
 
 
-### Datasets
+## Datasets
 
 Thepackage already includes some pre-trained models but if you want to test by your own you should download the datasets. 
 
@@ -38,15 +39,15 @@ brat_config  eval.py       __MACOSX            README_data.md  scienceie2017_tes
 dev          eval_py27.py  README_data_dev.md  README.md       semeval_articles_test          util.py  zips
 ```
 
-### Test
+## Test
 
-After istalling you can test by running [keyphrase-extraction-example.py](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/master/keyphrase-extraction-example.py)
+You can test your installation with [keyphrase-extraction-example.py](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/master/keyphrase-extraction-example.py)
 
 ```
 $ python keyphrase-extraction-example.py
 ```
 
-See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_extraction.ipynb) for more deatils.
+Also, see [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_extraction.ipynb) for another example.
 
 
 ## Requirements 
@@ -59,7 +60,7 @@ See [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_e
 
 ### Notebooks
 
-To run the examples in the noteooks Keyphrase_extraction.ipynb install JupyterLab
+To run the noteooks in this repository install JupyterLab.
 
 ```
 $ pip install jupyterlab
@@ -70,3 +71,9 @@ Then run the following command.
 ```
 jupyter lab
 ```
+
+## Further information
+
+This method uses a CRFs model (Conditional Random Fields) to label keyphrases in text, the model is trained with keyphrase candidates filtered with Part-of-Spech tag sequences. It is based on the method described [here](https://aclanthology.coli.uni-saarland.de/papers/S17-2174/s17-2174), but with a better performance. Please, feel free to send us comments or questions.
+
+In this version we use [python-crfsuite](https://github.com/scrapinghub/python-crfsuite). 
