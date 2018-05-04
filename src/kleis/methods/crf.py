@@ -6,8 +6,8 @@
 import os
 import pycrfsuite
 
-from kpext.config.config import MODELS_PATH
-from kpext.resources import dataset as rd
+from kleis.config.config import MODELS_PATH
+from kleis.resources import dataset as kl
 
 def crf_preprocess_candidates(candidates):
     """Receive annotated candidates and return features and labels list"""
@@ -25,10 +25,10 @@ def crf_preprocess_candidates(candidates):
 
 def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
     """Receive annotated candidates and train model"""
-    if not rd.path_exists(MODELS_PATH):
+    if not kl.path_exists(MODELS_PATH):
         os.mkdir(MODELS_PATH)
     model = MODELS_PATH + name
-    if not rd.path_exists(model):
+    if not kl.path_exists(model):
         features, labels = [], []
         for candidates in annotated_candidates.values():
             candidate_features, candidate_labels = crf_preprocess_candidates(candidates)
@@ -54,15 +54,15 @@ def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
 def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
                      features_method="simple", tagging_notation="BIO", generic_label=True):
     """Receive tagger, pos sequences and text and return labeled text"""
-    tokens, tokens_span = rd.tokenize_en(text)
-    tags = rd.tag_text_en(tokens, tokens_span)
+    tokens, tokens_span = kl.tokenize_en(text)
+    tags = kl.tag_text_en(tokens, tokens_span)
     dataset_element_fake = {"tags": tags}
-    candidates_spans = rd.filter_pos_sequences(
+    candidates_spans = kl.filter_pos_sequences(
         dataset_element_fake,
         pos_sequences,
         annotated=False
     )
-    candidates = rd.candidates_spans_features_labels_from(
+    candidates = kl.candidates_spans_features_labels_from(
         candidates_spans, dataset_element_fake,
         context_tokens=context_tokens,
         features_method=features_method,

@@ -4,8 +4,8 @@ Generic class to load corpus.
 
 """
 import copy
-import kpext.resources.dataset as rd
-import kpext.methods.crf as mc
+import kleis.resources.dataset as kl
+import kleis.methods.crf as klcrf
 
 class Corpus:
     """Corpus class"""
@@ -25,24 +25,24 @@ class Corpus:
     _context_tokens = None
     _crf_tagger = None
     _crf_method = None
-    _filter_min_count = 1
+    _filter_min_count = 3
 
     def __init__(self):
-        self._config = rd.load_config_corpus(name=self._name)
-        self.load_train()
-        self.load_dev()
-        self.load_test()
+        self._config = kl.load_config_corpus(name=self.name)
+        # self.load_train()
+        # self.load_dev()
+        # self.load_test()
         # self.training()
-        self.load_pos_sequences()
+        # self.load_pos_sequences()
 
-    def load_pos_sequences(self, filter_min_count=1):
+    def load_pos_sequences(self, filter_min_count=3):
         """Load PoS sequences"""
         self._filter_min_count = filter_min_count
         # Load pos sequences
         self.pos_sequences = self._train
 
-    def training(self, features_method="simple", tagging_notation="BIO",
-                 context_tokens=1, crf="pycrfsuite", filter_min_count=1,
+    def training(self, features_method="simple", tagging_notation="BILOU",
+                 context_tokens=1, crf="pycrfsuite", filter_min_count=3,
                  generic_label=True):
         """Init training"""
         self._features_method = features_method
@@ -116,11 +116,8 @@ class Corpus:
     @pos_sequences.setter
     def pos_sequences(self, dataset):
         """Load PoS sequences from dataset, using format
-        returned by rd.parse_brat_content()"""
-        if dataset:
-            self._pos_sequences = rd.load_pos_sequences(dataset)
-        else:
-            self._pos_sequences = None
+        returned by kl.parse_brat_content()"""
+        self._pos_sequences = kl.load_pos_sequences(dataset, name=self.name)
 
     @pos_sequences.deleter
     def pos_sequences(self):
@@ -135,7 +132,7 @@ class Corpus:
     @annotated_candidates_spans.setter
     def annotated_candidates_spans(self, dataset):
         """Set annotated candidates_spans"""
-        self._annotated_candidates_spans = rd.filter_all_candidates_spans(dataset,
+        self._annotated_candidates_spans = kl.filter_all_candidates_spans(dataset,
                                                                           self.pos_sequences,
                                                                           annotated=True)
 
@@ -152,7 +149,7 @@ class Corpus:
     @annotated_candidates.setter
     def annotated_candidates(self, candidates_spans):
         """Set training features"""
-        self._annotated_candidates = rd.dataset_features_labels_from(
+        self._annotated_candidates = kl.dataset_features_labels_from(
             candidates_spans,
             self._train,
             context_tokens=self._context_tokens,
@@ -183,7 +180,7 @@ class Corpus:
              ("generic" if self._generic_label else "annotation"),
              self._crf_method)
         if self._crf_method == "pycrfsuite":
-            self._crf_tagger = mc.pycrfsuite_train(self.annotated_candidates,
+            self._crf_tagger = klcrf.pycrfsuite_train(self.annotated_candidates,
                                                    name=model_file_name)
 
     @property
@@ -200,7 +197,7 @@ class Corpus:
         """Labeling method"""
         keyphrase = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = mc.pycrfsuite_label(self._crf_tagger,
+            keyphrase = klcrf.pycrfsuite_label(self._crf_tagger,
                                             self.pos_sequences,
                                             text,
                                             tagging_notation=self._tagging_notation)

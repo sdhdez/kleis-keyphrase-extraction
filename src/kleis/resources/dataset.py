@@ -5,10 +5,12 @@ Module to load corpus
 """
 import os
 from pathlib import Path
+import pickle
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tag.perceptron import PerceptronTagger
 
-from kpext.config.config import CORPUS, CORPUS_DEFAULT, SEMEVAL2017
+from kleis.config.config import CORPUS, CORPUS_DEFAULT,\
+                                SEMEVAL2017, TRAIN_PATH
 
 def get_files(path_to_files):
     """Walk in path"""
@@ -67,7 +69,7 @@ def load_corpus(name=None):
     corpus = name if name else SEMEVAL2017
     obj = None
     if corpus == SEMEVAL2017:
-        from kpext.resources.semeval2017 import SemEval2017
+        from kleis.resources.semeval2017 import SemEval2017
         obj = SemEval2017()
     return obj
 
@@ -178,10 +180,14 @@ def pos_sequence_from(keyphrase, tags):
         pos_sequence = list(map(lambda t: t[1], keyphrase_tags))
     return pos_sequence
 
-def load_pos_sequences(dataset):
+def load_pos_sequences(dataset, name=""):
     """Receive pre-processed dataset and return PoS sequences"""
     pos_sequences = {}
-    if dataset:
+    pos_seq_path = TRAIN_PATH + "/pos-sequences." + str(name) + ".normal.pkl"
+    if Path(pos_seq_path).exists():
+        with open(pos_seq_path, "rb") as fin:
+            pos_sequences = pickle.load(fin)
+    elif dataset:
         # FOr each document
         for key in dataset:
             # For each keyphrase in document
@@ -195,6 +201,8 @@ def load_pos_sequences(dataset):
                 pos_sequences.setdefault(pos_sequence_str, {"tags": pos_sequence, "count": 0})
                 # Add 1 to count
                 pos_sequences[pos_sequence_str]["count"] += 1
+        with open(pos_seq_path, "wb") as fout:
+            pickle.dump(pos_sequences, fout)
     # Return list of PoS sequences
     return pos_sequences
 
@@ -229,18 +237,20 @@ def filter_pos_sequences(element, pos_sequences, annotated=False):
                 candidates_spans.append(candidate_span)
     return candidates_spans
 
-def filter_all_candidates_spans(dataset, pos_sequences, annotated=False, filtering="pos-sequences"):
+def filter_all_candidates_spans(dataset, pos_sequences, annotated=False,
+                                filtering="pos-sequences"):
     """Receive dataset, list of PoS sequences and add candidates_spans to dataset"""
     dataset_candidates_spans = {}
-    # For each document
-    for key in dataset:
-        # Filter candidates_spans from document in dataset
-        if filtering == "pos-sequences":
-            dataset_candidates_spans[key] = filter_pos_sequences(dataset[key],
-                                                                 pos_sequences,
-                                                                 annotated=annotated)
-        else:
-            break
+    if dataset:
+        # For each document
+        for key in dataset:
+            # Filter candidates_spans from document in dataset
+            if filtering == "pos-sequences":
+                dataset_candidates_spans[key] = filter_pos_sequences(dataset[key],
+                                                                     pos_sequences,
+                                                                     annotated=annotated)
+            else:
+                break
     return dataset_candidates_spans
 
 def tags_from(element):
@@ -266,16 +276,18 @@ def dataset_features_labels_from(candidates_spans, dataset,
                                  context_tokens=1, features_method="simple",
                                  tagging_notation="BIO", generic_label=True):
     """Receive candidates_spans and dataset and return all features from candidates"""
-    dataset_features_labels = {
-        key: candidates_spans_features_labels_from(
-            candidates_spans[key],
-            element,
-            context_tokens=context_tokens,
-            features_method=features_method,
-            tagging_notation=tagging_notation,
-            generic_label=generic_label) \
-            for key, element in dataset.items()
-    }
+    dataset_features_labels = {}
+    if dataset:
+        dataset_features_labels = {
+            key: candidates_spans_features_labels_from(
+                candidates_spans[key],
+                element,
+                context_tokens=context_tokens,
+                features_method=features_method,
+                tagging_notation=tagging_notation,
+                generic_label=generic_label) \
+                for key, element in dataset.items()
+        }
     return dataset_features_labels
 
 def candidates_spans_features_labels_from(candidates_spans, element,

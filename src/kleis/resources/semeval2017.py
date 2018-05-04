@@ -3,9 +3,9 @@
 Class SemEval2017.
 
 """
-from kpext.config.config import SEMEVAL2017
-from kpext.resources.corpus import Corpus
-import kpext.resources.dataset as rd
+from kleis.config.config import SEMEVAL2017
+from kleis.resources.corpus import Corpus
+import kleis.resources.dataset as kl
 
 class SemEval2017(Corpus):
     """Class for SemEval 2017 Task 10 corpus"""
@@ -16,29 +16,29 @@ class SemEval2017(Corpus):
 
     def load_train(self):
         """Set train dataset"""
-        dataset = dict(rd.load_dataset_raw(self._config['train-labeled'],
+        dataset = dict(kl.load_dataset_raw(self._config['train-labeled'],
                                            [".txt", ".ann", ".xml"],
                                            suffix="txt",
                                            encoding=self._encoding))
-        rd.preprocess_dataset(dataset, lang=self._lang)
+        kl.preprocess_dataset(dataset, lang=self._lang)
         self._train = dataset
 
     def load_dev(self):
         """Set dev dataset"""
-        dataset = dict(rd.load_dataset_raw(self._config['dev-labeled'],
+        dataset = dict(kl.load_dataset_raw(self._config['dev-labeled'],
                                            [".txt", ".ann", ".xml"],
                                            suffix="txt",
                                            encoding=self._encoding))
-        rd.preprocess_dataset(dataset, lang=self._lang)
+        kl.preprocess_dataset(dataset, lang=self._lang)
         self._dev = dataset
 
     def load_test(self):
         """Set test dataset"""
-        dataset = dict(rd.load_dataset_raw(self._config['test-labeled'],
+        dataset = dict(kl.load_dataset_raw(self._config['test-labeled'],
                                            [".txt", ".ann"],
                                            suffix="txt",
                                            encoding=self._encoding))
-        dataset_part = rd.load_dataset_raw(self._config['test-unlabeled'],
+        dataset_part = kl.load_dataset_raw(self._config['test-unlabeled'],
                                            [".xml"],
                                            suffix="txt",
                                            encoding=self._encoding)

@@ -1,4 +1,5 @@
-src/kpext/kpext_data/corpus/*
+src/kleis/kleis_data/train/*
+src/kleis/kleis_data/corpus/*
 *.pycrfsuite
 # Byte-compiled / optimized / DLL files
 __pycache__/
