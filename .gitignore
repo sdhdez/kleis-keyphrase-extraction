@@ -1,3 +1,4 @@
+output-*/
 src/kleis/kleis_data/train/*.pkl
 src/kleis/kleis_data/corpus/*
 *.pycrfsuite
