@@ -30,7 +30,7 @@ Example [here](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/master/
 
 Thepackage already includes some pre-trained models but if you want to test by your own you should download the datasets. 
 
-    - [SemEval 2017 Task 10](https://scienceie.github.io/resources.html) and decompress in "~/kleis_data/corpus/semeval2017-task10" or "./kleis_data/corpus/semeval2017-task10"
+Download from [SemEval 2017 Task 10](https://scienceie.github.io/resources.html) and decompress in "~/kleis_data/corpus/semeval2017-task10" or "./kleis_data/corpus/semeval2017-task10"
 
 ```
 $ ls ~/kleis_data/corpus/semeval2017-task10
