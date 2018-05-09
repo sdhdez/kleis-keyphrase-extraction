@@ -3,7 +3,7 @@
 Kleis is a python package to label keyphrases in scientific text. It is named after the ancient greek word [κλείς](https://en.wiktionary.org/w/index.php?title=%CE%BA%CE%BB%CE%B5%CE%AF%CF%82).
 ## Install 
 
-### Pip
+### Pip (Easy and quick)
 
 ```
 $ pip install kleis-keyphrase-extraction
@@ -19,7 +19,7 @@ $ pip install dist/kleis_keyphrase_extraction-0.1.X.devX-py3-none-any.whl
 ```
 Replace X with the corresponding values.
 
-Note: This method doesn't include pre-trained models, you should    
+Note: This method doesn't include pre-trained models, you should download the corpus so it can train.
 
 ## Usage 
 

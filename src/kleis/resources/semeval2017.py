@@ -44,4 +44,5 @@ class SemEval2017(Corpus):
                                            encoding=self._encoding)
         for key, value in dataset_part:
             dataset[key]["raw"]["xml"] = value["raw"]["xml"]
+        kl.preprocess_dataset(dataset, lang=self._lang)
         self._test = dataset

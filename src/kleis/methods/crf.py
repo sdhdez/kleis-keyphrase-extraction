@@ -52,7 +52,7 @@ def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
     return tagger
 
 def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
-                     features_method="simple", tagging_notation="BIO", generic_label=True):
+                     features_method="simple", tagging_notation="BILOU", generic_label=True):
     """Receive tagger, pos sequences and text and return labeled text"""
     tokens, tokens_span = kl.tokenize_en(text)
     tags = kl.tag_text_en(tokens, tokens_span)
@@ -88,7 +88,7 @@ def pycrfsuite_label(tagger, pos_sequences, text, context_tokens=1,
             )
     return keyphrases
 
-def is_keyphrase(labeled_candidate, tags, pos_sequences, tagging_notation="BIO"):
+def is_keyphrase(labeled_candidate, tags, pos_sequences, tagging_notation="BILOU"):
     """Receive labeled candidate and return true or false"""
     labels, candidate_spans = labeled_candidate
     start, end = candidate_spans["span"]
@@ -106,7 +106,7 @@ def is_keyphrase(labeled_candidate, tags, pos_sequences, tagging_notation="BIO")
             is_valid = True
     return is_valid
 
-def labeled_keyphrase_span(keyphrase, tags, tagging_notation="BIO"):
+def labeled_keyphrase_span(keyphrase, tags, tagging_notation="BILOU"):
     """Receive labeled keyphrase and return span"""
     labeled_candidate, candidate_spans = keyphrase
     start, end = candidate_spans["span"]

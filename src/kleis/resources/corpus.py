@@ -5,7 +5,7 @@ Generic class to load corpus.
 """
 import copy
 import kleis.resources.dataset as kl
-import kleis.methods.crf as klcrf
+from kleis.methods import crf as kcrf
 
 class Corpus:
     """Corpus class"""
@@ -162,7 +162,7 @@ class Corpus:
         del self._annotated_candidates
 
     def crf_train(self, features_method="simple",
-                  tagging_notation="BIO", context_tokens=1,
+                  tagging_notation="BILOU", context_tokens=1,
                   generic_label=True, crf="pycrfsuite"):
         """Training CRF"""
         self._crf_method = crf
@@ -180,8 +180,8 @@ class Corpus:
              ("generic" if self._generic_label else "annotation"),
              self._crf_method)
         if self._crf_method == "pycrfsuite":
-            self._crf_tagger = klcrf.pycrfsuite_train(self.annotated_candidates,
-                                                   name=model_file_name)
+            self._crf_tagger = kcrf.pycrfsuite_train(self.annotated_candidates,
+                                                     name=model_file_name)
 
     @property
     def crf_tagger(self):
@@ -197,8 +197,8 @@ class Corpus:
         """Labeling method"""
         keyphrase = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = klcrf.pycrfsuite_label(self._crf_tagger,
-                                            self.pos_sequences,
-                                            text,
-                                            tagging_notation=self._tagging_notation)
+            keyphrase = kcrf.pycrfsuite_label(self._crf_tagger,
+                                              self.pos_sequences,
+                                              text,
+                                              tagging_notation=self._tagging_notation)
         return keyphrase

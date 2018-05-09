@@ -274,7 +274,7 @@ def match_candidate_span_keyphrase(segment_span, candidate_span_segment, keyphra
 
 def dataset_features_labels_from(candidates_spans, dataset,
                                  context_tokens=1, features_method="simple",
-                                 tagging_notation="BIO", generic_label=True):
+                                 tagging_notation="BILOU", generic_label=True):
     """Receive candidates_spans and dataset and return all features from candidates"""
     dataset_features_labels = {}
     if dataset:
@@ -292,7 +292,7 @@ def dataset_features_labels_from(candidates_spans, dataset,
 
 def candidates_spans_features_labels_from(candidates_spans, element,
                                           context_tokens=1, features_method="simple",
-                                          tagging_notation="BIO", generic_label=True):
+                                          tagging_notation="BILOU", generic_label=True):
     """Receive candidate_span list and return list of candidate features"""
     features_labels = [
         features_labels_from(candidate_span,
@@ -306,7 +306,7 @@ def candidates_spans_features_labels_from(candidates_spans, element,
     return features_labels
 
 def features_labels_from(candidate_span, element, context_tokens=1,
-                         features_method="simple", tagging_notation="BIO", generic_label=True):
+                         features_method="simple", tagging_notation="BILOU", generic_label=True):
     """"Return candidate_span features"""
     start, end = candidate_span["span"]
     label = keyphrase_label_from(candidate_span, element, generic_label=generic_label)
@@ -397,7 +397,7 @@ def keyphrase_label_from(candidate_span, element, generic_label=True):
             label = "KEYPHRASE"
     return label
 
-def add_notation(tags_segment, label, left_context, right_context, tagging_notation="BIO"):
+def add_notation(tags_segment, label, left_context, right_context, tagging_notation="BILOU"):
     """Receive segment of tagged tokens and return list of labeled tokens"""
     labels = []
     if tagging_notation == "BIO":
