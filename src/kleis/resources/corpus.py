@@ -39,7 +39,7 @@ class Corpus:
         """Load PoS sequences"""
         self._filter_min_count = filter_min_count
         # Load pos sequences
-        self.pos_sequences = self._train
+        self.pos_sequences = self.train
 
     def training(self, features_method="simple", tagging_notation="BILOU",
                  context_tokens=1, crf="pycrfsuite", filter_min_count=3,
@@ -47,7 +47,7 @@ class Corpus:
         """Init training"""
         self._features_method = features_method
         self.load_pos_sequences(filter_min_count=filter_min_count)
-        self.annotated_candidates_spans = self._train
+        self.annotated_candidates_spans = self.train
         # CRF train
         self.crf_train(features_method=features_method,
                        tagging_notation=tagging_notation,
@@ -67,7 +67,7 @@ class Corpus:
     @property
     def train(self):
         """Return train dataset"""
-        return copy.deepcopy(self._train)
+        return {k:v for k, v in list(self._train.items())} if self._train else None
 
     @train.deleter
     def train(self):
@@ -127,7 +127,7 @@ class Corpus:
     @property
     def annotated_candidates_spans(self):
         """Extract annotated candidate phrases from train dataset"""
-        return self._annotated_candidates_spans
+        return copy.deepcopy(self._annotated_candidates_spans)
 
     @annotated_candidates_spans.setter
     def annotated_candidates_spans(self, dataset):
@@ -144,14 +144,14 @@ class Corpus:
     @property
     def annotated_candidates(self):
         """Get training features for dataset"""
-        return self._annotated_candidates
+        return copy.deepcopy(self._annotated_candidates)
 
     @annotated_candidates.setter
     def annotated_candidates(self, candidates_spans):
         """Set training features"""
         self._annotated_candidates = kl.dataset_features_labels_from(
             candidates_spans,
-            self._train,
+            self.train,
             context_tokens=self._context_tokens,
             features_method=self._features_method,
             tagging_notation=self._tagging_notation)
@@ -170,7 +170,7 @@ class Corpus:
         self._tagging_notation = tagging_notation
         self._context_tokens = context_tokens
         self._generic_label = generic_label
-        self.annotated_candidates = self._annotated_candidates_spans
+        self.annotated_candidates = self.annotated_candidates_spans
         model_file_name = "%s.%s.%s.%s.ctx%s.lbl%s.%s" % \
             ("candidates-model",
              self._filter_min_count,
@@ -197,7 +197,7 @@ class Corpus:
         """Labeling method"""
         keyphrase = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = kcrf.pycrfsuite_label(self._crf_tagger,
+            keyphrase = kcrf.pycrfsuite_label(self.crf_tagger,
                                               self.pos_sequences,
                                               text,
                                               tagging_notation=self._tagging_notation)
