@@ -342,6 +342,8 @@ def features_labels_from(candidate_span, element, context_tokens=1,
                                        tags_segment[token_bc_start:offset],
                                        tags_segment[offset+1:offset + context_tokens + 1]
                                       )
+            posseq = " ".join([t[1] for t in element["tags"][start:end]])
+            features.extend(['posseq=%s' % posseq])
             features_labels.append((features, labels[offset]))
     return features_labels
 
