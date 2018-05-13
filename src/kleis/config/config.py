@@ -31,7 +31,8 @@ else:
     print("        + ~/kleis_data/%s" % DEFAULT_CORPUS_PATH, file=sys.stderr)
     print("        + %s" % (KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH), file=sys.stderr)
     print("    - You can use pre-trained models.", file=sys.stderr)
-    CORPUS_PATH = DEFAULT_CORPUS_PATH
+    CORPUS_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
+    print("Default: ", Path(CORPUS_PATH))
 
 CORPUS = {
     ACLRDTEC: {
