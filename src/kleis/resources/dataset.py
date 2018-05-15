@@ -322,18 +322,15 @@ def features_labels_from(candidate_span, element, context_tokens=1,
         # Default features
         for offset, tag in enumerate(tags_segment):
             token_bc_start = max(offset - context_tokens, 0)
-            features_labels.append(
-                (simple_features(tag,
-                                 context_start + offset,
-                                 len(element["tags"]),
-                                 tags_segment[token_bc_start:offset],
-                                 tags_segment[offset+1:offset + context_tokens + 1]
-                                ),
-                 labels[offset]
-                )
-            )
-    if features_method == "extended":
-        # Extended features
+            features = simple_features(tag,
+                                       context_start + offset,
+                                       len(element["tags"]),
+                                       tags_segment[token_bc_start:offset],
+                                       tags_segment[offset+1:offset + context_tokens + 1]
+                                      )
+            features_labels.append((features, labels[offset]))
+    if features_method == "simple-posseq":
+        # simple features with posseq
         for offset, tag in enumerate(tags_segment):
             token_bc_start = max(offset - context_tokens, 0)
             features = simple_features(tag,
@@ -345,10 +342,21 @@ def features_labels_from(candidate_span, element, context_tokens=1,
             posseq = " ".join([t[1] for t in element["tags"][start:end]])
             features.extend(['posseq=%s' % posseq])
             features_labels.append((features, labels[offset]))
+    if features_method == "extended":
+        # Extended features
+        for offset, tag in enumerate(tags_segment):
+            token_bc_start = max(offset - context_tokens, 0)
+            features = extended_features(tag,
+                                         context_start + offset,
+                                         len(element["tags"]),
+                                         tags_segment[token_bc_start:offset],
+                                         tags_segment[offset+1:offset + context_tokens + 1]
+                                        )
+            features_labels.append((features, labels[offset]))
     return features_labels
 
 def simple_features(tag, token_index, len_tags, beginning_context, ending_context):
-    """Return list with features from token"""
+    """Return simple features from token"""
     token, postag, _, _ = tag
     features = [
         'bias',
@@ -385,6 +393,21 @@ def simple_features(tag, token_index, len_tags, beginning_context, ending_contex
             '+%d:postag=%s' % (context_index, postag),
             '+%d:postag[:2]=%s' % (context_index, postag[:2]),
             ])
+    return features
+
+def extended_features(tag, token_index, len_tags, beginning_context, ending_context):
+    """Return extended features from token"""
+    token, _, _, _ = tag
+    features = simple_features(tag,
+                               token_index,
+                               len_tags,
+                               beginning_context,
+                               ending_context
+                              )
+    features.extend([
+        'token.suffix[:2]=%s' % token[:2],
+        'token.suffix[:3]=%s' % token[:3]
+    ])
     return features
 
 def keyphrase_label_from(candidate_span, element, generic_label=True):
@@ -430,6 +453,10 @@ def add_notation(tags_segment, label, left_context, right_context, tagging_notat
                 token_label = "O"
             labels.append(token_label)
     return labels
+
+def post_processing(keyphrases):
+    """Post-process keyphrases list"""
+
 
 def keyphrases2brat(keyphrases):
     """Receive keyphrases and return brat string"""
