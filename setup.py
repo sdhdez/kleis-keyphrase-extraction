@@ -11,7 +11,7 @@ with open('README.md', 'r', encoding="utf-8") as f:
     README = f.read()
 
 setup(name='kleis-keyphrase-extraction',
-      version='v0.1.1.dev1',
+      version='v0.1.2.dev0',
       description='Python package for keyphrase labeling.',
       long_description=README,
       long_description_content_type='text/markdown',

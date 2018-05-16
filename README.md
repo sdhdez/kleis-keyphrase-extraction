@@ -23,7 +23,7 @@ Note: This method doesn't include pre-trained models, you should download the co
 
 ## Usage 
 
-Example [here](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/master/minimal-example.ipynb)
+Example [here](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/r0.1.2/notebooks/minimal-example.ipynb)
 
 
 ## Datasets
@@ -47,7 +47,7 @@ You can test your installation with [keyphrase-extraction-example.py](https://gi
 $ python keyphrase-extraction-example.py
 ```
 
-Also, see [here](https://github.com/snovd/keyphrase-extraction/blob/master/Keyphrase_extraction.ipynb) for another example.
+Also, see [here](https://github.com/sdhdez/kleis-keyphrase-extraction/blob/r0.1.2/notebooks/Keyphrase_extraction.ipynb) for another example.
 
 
 ## Requirements 
