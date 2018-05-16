@@ -193,12 +193,14 @@ class Corpus:
         """Delete tagger"""
         del self._crf_tagger
 
-    def label_text(self, text):
+    def label_text(self, text, post_processing=True):
         """Labeling method"""
-        keyphrase = []
+        keyphrases = []
         if self._crf_method == "pycrfsuite":
-            keyphrase = kcrf.pycrfsuite_label(self.crf_tagger,
-                                              self.pos_sequences,
-                                              text,
-                                              tagging_notation=self._tagging_notation)
-        return keyphrase
+            keyphrases = kcrf.pycrfsuite_label(self.crf_tagger,
+                                               self.pos_sequences,
+                                               text,
+                                               tagging_notation=self._tagging_notation)
+        if post_processing:
+            keyphrases = kl.post_processing(keyphrases)
+        return keyphrases

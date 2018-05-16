@@ -454,9 +454,22 @@ def add_notation(tags_segment, label, left_context, right_context, tagging_notat
             labels.append(token_label)
     return labels
 
+def largest_keyphrases(keyphrases):
+    """Filter keyphrases choosing the largest"""
+    keyphrases = sorted(keyphrases, key=lambda kp: (kp[1][1][0], -kp[1][1][1]))
+    kps = keyphrases[:1]
+    last = kps[0] if kps else None
+    for i, keyphrase in enumerate(keyphrases[1:]):
+        prev_start, prev_end = last[1][1]
+        start, end = keyphrases[i+1][1][1]
+        if not (prev_start <= start and prev_end >= end):
+            last = keyphrase
+            kps.append(last)
+    return kps
+
 def post_processing(keyphrases):
     """Post-process keyphrases list"""
-
+    return largest_keyphrases(keyphrases)
 
 def keyphrases2brat(keyphrases):
     """Receive keyphrases and return brat string"""

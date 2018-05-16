@@ -3,6 +3,7 @@
     CRF module
 
 """
+import sys
 import os
 import pycrfsuite
 
@@ -26,9 +27,11 @@ def crf_preprocess_candidates(candidates):
 def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
     """Receive annotated candidates and train model"""
     if not kl.path_exists(MODELS_PATH):
+        print("Info: Models path not found %s" % MODELS_PATH)
         os.mkdir(MODELS_PATH)
     model = MODELS_PATH + name
     if not kl.path_exists(model):
+        print("Info: Model not found %s" % model)
         features, labels = [], []
         for candidates in annotated_candidates.values():
             candidate_features, candidate_labels = crf_preprocess_candidates(candidates)
