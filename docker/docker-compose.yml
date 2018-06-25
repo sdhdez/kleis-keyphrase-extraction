@@ -4,11 +4,11 @@ services:
         image: sdavidhdez/kleis:latest
         build: .
         container_name: 'kleis'
-        restart: always
+        restart: "no"
         ports:
             - '8889:8888'
         volumes:
-            - '../:/home/jupyterlab/notebooks/'
+            - '../:/home/jupyterlab/app/'
             - '/home/snov/nltk_data/:/home/jupyterlab/nltk_data/'
             - './volumes/jupyter_notebook_config.py:/home/jupyterlab/.jupyter/jupyter_notebook_config.py'
             - './volumes/.bashrc:/home/jupyterlab/.bashrc'
