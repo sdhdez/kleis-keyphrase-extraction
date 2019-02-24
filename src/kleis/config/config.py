@@ -9,34 +9,52 @@ from pathlib import Path
 
 from kleis import kleis_data
 
-ACLRDTEC = "acl-rd-tec-2.0"
+ACLRDTEC20 = "acl-rd-tec-2.0"
 SEMEVAL2017 = "semeval2017-task10"
+FORMAT_ACLXML = "acl-xml"
+FORMAT_BRAT = "brat"
 
 KPEXTDATA_PATH = str(Path(inspect.getfile(kleis_data)).parent)
 
 # Check for default paths for corpus
-DEFAULT_CORPUS_PATH = "corpus/" + SEMEVAL2017 + "/"
+DEFAULT_CORPUS_PATH = "corpus/" # + SEMEVAL2017 + "/"
 if Path("./kleis_data/" + DEFAULT_CORPUS_PATH).exists():
-    CORPUS_PATH = "./kleis_data/" + DEFAULT_CORPUS_PATH
+    CORPUS_BASE_PATH = "./kleis_data/" + DEFAULT_CORPUS_PATH
 elif Path("~/kleis_data/" + DEFAULT_CORPUS_PATH).exists():
-    CORPUS_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
+    CORPUS_BASE_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
 elif Path(KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH).exists():
-    CORPUS_PATH = KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH
+    CORPUS_BASE_PATH = KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH
 else:
-    print("Warning: SemEval 2017 Task 10 corpus doesn't exists.", file=sys.stderr)
-    print("    - Download from here https://scienceie.github.io/resources.html",
-          file=sys.stderr)
+    # print("Warning: SemEval 2017 Task 10 corpus doesn't exists.", file=sys.stderr)
+    # print("    - Download from here https://scienceie.github.io/resources.html",
+    #       file=sys.stderr)
     print("    - Use one of the following paths.", file=sys.stderr)
     print("        + ./kleis_data/%s" % DEFAULT_CORPUS_PATH, file=sys.stderr)
     print("        + ~/kleis_data/%s" % DEFAULT_CORPUS_PATH, file=sys.stderr)
     print("        + %s" % (KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH), file=sys.stderr)
     print("    - You can use pre-trained models.", file=sys.stderr)
-    CORPUS_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
-    print("Default: ", Path(CORPUS_PATH))
+    CORPUS_BASE_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
+    print("Default: ", Path(CORPUS_BASE_PATH))
+
+CORPUS_SEMEVAL2017_PATH = CORPUS_BASE_PATH + SEMEVAL2017 + "/"
+CORPUS_ACLRDTEC20_PATH = CORPUS_BASE_PATH + ACLRDTEC20 + "/"
 
 CORPUS = {
-    ACLRDTEC: {
-        "_id": "acl-rd-tec-2.0",
+    ACLRDTEC20: {
+        "_id": ACLRDTEC20,
+        "format": "xml",
+        "format-description": "XML",
+        "url": "https://github.com/languagerecipes/acl-rd-tec-2.0/",
+        "dataset": {
+            "train-labeled": CORPUS_ACLRDTEC20_PATH + \
+                "distribution/annoitation_files/dummyannon/",
+            "train-unlabeled": None,
+            "dev-labeled": None,
+            "dev-unlabeled": None,
+            "test-unlabeled": None,
+            "test-labeled": CORPUS_ACLRDTEC20_PATH + \
+                "distribution/annoitation_files/annotator2/"
+            },
         "options": {}
         },
     SEMEVAL2017: {
@@ -44,12 +62,12 @@ CORPUS = {
         "format": "brat",
         "format-description": "brat standoff format, http://brat.nlplab.org/standoff.html",
         "dataset": {
-            "train-labeled": CORPUS_PATH + "train2/",
+            "train-labeled": CORPUS_SEMEVAL2017_PATH + "train2/",
             "train-unlabeled": None,
-            "dev-labeled": CORPUS_PATH + "dev/",
+            "dev-labeled": CORPUS_SEMEVAL2017_PATH + "dev/",
             "dev-unlabeled": None,
-            "test-unlabeled": CORPUS_PATH + "scienceie2017_test_unlabelled/",
-            "test-labeled": CORPUS_PATH + "semeval_articles_test/"
+            "test-unlabeled": CORPUS_SEMEVAL2017_PATH + "scienceie2017_test_unlabelled/",
+            "test-labeled": CORPUS_SEMEVAL2017_PATH + "semeval_articles_test/"
             },
         "options": {}
         },
@@ -57,7 +75,7 @@ CORPUS = {
 }
 CORPUS_DEFAULT = CORPUS[SEMEVAL2017]
 CORPUS_SEMEVAL2017_TASK10 = CORPUS[SEMEVAL2017]
-CORPUS_ACL_RD_TEC_2_0 = CORPUS[ACLRDTEC]
+CORPUS_ACL_RD_TEC_2_0 = CORPUS[ACLRDTEC20]
 
 # Check for default paths for models
 DEFAULT_MODELS_PATH = "models/"
@@ -85,7 +103,7 @@ elif Path("~/kleis_data/" + DEFAULT_TRAIN_PATH).exists():
 elif Path(KPEXTDATA_PATH + "/" + DEFAULT_TRAIN_PATH).exists():
     TRAIN_PATH = KPEXTDATA_PATH + "/" + DEFAULT_TRAIN_PATH
 else:
-    print("Warning: Path to save models doesn't exists.", file=sys.stderr)
+    print("Warning: Path to save train models doesn't exists.", file=sys.stderr)
     print("    - Possible paths are:", file=sys.stderr)
     print("        + %s" % (KPEXTDATA_PATH + "/" + DEFAULT_TRAIN_PATH), file=sys.stderr)
     print("        + %s" % ("./" + DEFAULT_TRAIN_PATH), file=sys.stderr)

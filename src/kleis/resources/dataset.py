@@ -8,15 +8,17 @@ from pathlib import Path
 import pickle
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tag.perceptron import PerceptronTagger
+import xml.etree.ElementTree as ET
 
 from kleis.config.config import CORPUS, CORPUS_DEFAULT,\
-                                SEMEVAL2017, TRAIN_PATH
+                                SEMEVAL2017, ACLRDTEC20,\
+                                TRAIN_PATH, FORMAT_ACLXML, FORMAT_BRAT
 
 def get_files(path_to_files):
     """Walk in path"""
     for dirpath, _, filenames in os.walk(path_to_files):
         for filename in filenames:
-            yield Path(dirpath + filename)
+            yield Path(os.path.join(dirpath, filename))
 
 def get_files_by_ext(path_to_files, suffix="txt"):
     """Receive path and return files found by extension"""
@@ -71,6 +73,9 @@ def load_corpus(name=None):
     if corpus == SEMEVAL2017:
         from kleis.resources.semeval2017 import SemEval2017
         obj = SemEval2017()
+    if corpus == ACLRDTEC20:
+        from kleis.resources.aclrdtec20 import AclRdTec20
+        obj = AclRdTec20()
     return obj
 
 def load_dataset_raw(dataset_name_config, extensions, suffix="txt", encoding="utf-8"):
@@ -161,14 +166,64 @@ def parse_brat_content(brat_content, lang="en"):
     # Return tags and keyphrases
     return tags, keyphrases
 
-def preprocess_dataset(raw_dataset, lang="en"):
-    """Receives raw dataset and adds pre-processed dataset"""
+def normalize_acl_xml(text_xml):
+    """Receives a XML string and strip spaces"""
+    stripped_text_xml = ""
+    for line in text_xml.split("\t"):
+        stripped_line = line.strip()
+        if stripped_line:
+            stripped_text_xml += stripped_line.replace("<S>         <term", "<S><term")
+    return stripped_text_xml
+
+def parse_acl_xml_content(xml_content, lang="en"):
+    """Receive raw content in XML ACL-RD-TEC-2.0 format and
+    return list with parsed annotations"""
+    root_xml_content = ET.fromstring(normalize_acl_xml(xml_content["xml"]))
+    terms = [("T" + str(i),
+             term.text,
+             term.get("class")
+             ) for i, term in enumerate(root_xml_content.iter("term"), 1)]
+    print(terms)
+    for sentence in root_xml_content.iter("S"):
+        ET.dump(sentence)
+        sentence_text = list(sentence.itertext())
+        print(sentence_text)
+    text_content = " ".join("".join(s.itertext()) for s in root_xml_content.iter("S")) 
+    print(text_content)
+    if lang == "en":
+        # Tokenizing
+        tokens, tokens_span = tokenize_en(text_content)
+        # Tagging
+        tags = tag_text_en(tokens, tokens_span)
+        # Annotated keyphrases
+        # keyphrases = filter_keyphrases_acl_xml(text_content)
+    return tags, None
+
+def preprocess_dataset_brat(raw_dataset, lang="en"):
+    """Receives raw dataset and adds pre-processed dataset in brat format"""
     for key in raw_dataset:
         tags, keyphrases = parse_brat_content(raw_dataset[key]["raw"], lang=lang)
         # Add tagged tokens with ids of keyphrases to dataset
         raw_dataset[key]["tags"] = tags
         # Add keyphrases with indices of tokens to dataset
         raw_dataset[key]["keyphrases"] = keyphrases
+
+def preprocess_dataset_acl_xml(raw_dataset, lang="en"):
+    """Receives raw dataset and adds pre-processed dataset in XML format 
+    used in the ACL-RD-TEC-2.0"""
+    for key in raw_dataset:
+        tags, keyphrases = parse_acl_xml_content(raw_dataset[key]["raw"], lang=lang)
+        # Add tagged tokens with ids of keyphrases to dataset
+        raw_dataset[key]["tags"] = tags
+        # Add keyphrases with indices of tokens to dataset
+        raw_dataset[key]["keyphrases"] = keyphrases
+
+def preprocess_dataset(raw_dataset, lang="en", dataset_format="brat"):
+    """Receives raw dataset and adds pre-processed dataset"""
+    if dataset_format == FORMAT_BRAT:
+        preprocess_dataset_brat(raw_dataset, lang=lang)
+    if dataset_format == FORMAT_ACLXML:
+        preprocess_dataset_acl_xml(raw_dataset, lang=lang)
 
 def pos_sequence_from(keyphrase, tags):
     """Receive keyphrase dict and return list of tags"""

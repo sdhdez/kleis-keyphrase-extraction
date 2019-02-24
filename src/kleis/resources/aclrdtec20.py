@@ -1,28 +1,28 @@
-"""resouces/semeval2017
+"""resouces/aclrdtec20
 
-Class SemEval2017.
+Class ACL-RD-TEC-2.0.
 
 """
-from kleis.config.config import SEMEVAL2017, FORMAT_BRAT
+from kleis.config.config import ACLRDTEC20, FORMAT_ACLXML
 from kleis.resources.corpus import Corpus
 import kleis.resources.dataset as kl
 
-class SemEval2017(Corpus):
-    """Class for SemEval 2017 Task 10 corpus"""
+class AclRdTec20(Corpus):
+    """Class for ACL-RD-TEC-2.0 corpus"""
     def __init__(self):
-        self._name = SEMEVAL2017
+        self._name = ACLRDTEC20
         self._lang = "en"
         super().__init__()
 
     def load_train(self):
         """Set train dataset"""
         dataset = dict(kl.load_dataset_raw(self._config['train-labeled'],
-                                           [".txt", ".ann", ".xml"],
-                                           suffix="txt",
+                                           [".xml"],
+                                           suffix="xml",
                                            encoding=self._encoding))
         kl.preprocess_dataset(dataset,
                               lang=self._lang,
-                              dataset_format=FORMAT_BRAT)
+                              dataset_format=FORMAT_ACLXML)
         self._train = dataset
 
     def load_dev(self):
