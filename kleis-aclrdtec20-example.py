@@ -17,6 +17,7 @@ def main():
     # print("Train:", default_corpus.train.popitem())
     print("len(Dev):", len(default_corpus.dev) if default_corpus.dev else None)
     # print("Dev:", default_corpus.dev.popitem())
+    # print("Load test:", default_corpus.load_test())
     print("len(Test):", len(default_corpus.test) if default_corpus.test else None)
     # print("Test:", default_corpus.test.popitem())
 

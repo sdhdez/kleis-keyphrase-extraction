@@ -172,7 +172,7 @@ class Corpus:
         self._generic_label = generic_label
         self.annotated_candidates = self.annotated_candidates_spans
         model_file_name = "%s.%s.%s.%s.ctx%s.lbl%s.%s" % \
-            ("candidates-model",
+            (self._name,
              self._filter_min_count,
              self._features_method,
              self._tagging_notation.lower(),

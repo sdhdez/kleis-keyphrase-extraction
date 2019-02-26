@@ -14,9 +14,20 @@ class AclRdTec20(Corpus):
         self._lang = "en"
         super().__init__()
 
-    def load_train(self):
+    @property
+    def subname(self):
+        """Return corpus name"""
+        return self._subname
+
+    @subname.setter
+    def subname(self, subname):
+        """Change name"""
+        self._subname = ACLRDTEC20 + "-" + subname
+
+    def load_train(self, annotator="annotator1"):
         """Set train dataset"""
-        dataset = dict(kl.load_dataset_raw(self._config['train-labeled'],
+        self.subname = annotator
+        dataset = dict(kl.load_dataset_raw(self._config['train-labeled-' + annotator],
                                            [".xml"],
                                            suffix="xml",
                                            encoding=self._encoding))
@@ -25,26 +36,13 @@ class AclRdTec20(Corpus):
                               dataset_format=FORMAT_ACLXML)
         self._train = dataset
 
-    def load_dev(self):
-        """Set dev dataset"""
-        dataset = dict(kl.load_dataset_raw(self._config['dev-labeled'],
-                                           [".txt", ".ann", ".xml"],
-                                           suffix="txt",
-                                           encoding=self._encoding))
-        kl.preprocess_dataset(dataset, lang=self._lang)
-        self._dev = dataset
-
     def load_test(self):
         """Set test dataset"""
         dataset = dict(kl.load_dataset_raw(self._config['test-labeled'],
-                                           [".txt", ".ann"],
-                                           suffix="txt",
-                                           encoding=self._encoding))
-        dataset_part = kl.load_dataset_raw(self._config['test-unlabeled'],
                                            [".xml"],
-                                           suffix="txt",
-                                           encoding=self._encoding)
-        for key, value in dataset_part:
-            dataset[key]["raw"]["xml"] = value["raw"]["xml"]
-        kl.preprocess_dataset(dataset, lang=self._lang)
+                                           suffix="xml",
+                                           encoding=self._encoding))
+        kl.preprocess_dataset(dataset,
+                              lang=self._lang,
+                              dataset_format=FORMAT_ACLXML)
         self._test = dataset

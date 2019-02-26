@@ -24,7 +24,7 @@ def crf_preprocess_candidates(candidates):
         labels.append(candidate_labels)
     return features, labels
 
-def pycrfsuite_train(annotated_candidates, name="candidates-model.pycrfsuite"):
+def pycrfsuite_train(annotated_candidates, name="crfmodel.pycrfsuite"):
     """Receive annotated candidates and train model"""
     if not kl.path_exists(MODELS_PATH):
         print("Info: Models path not found %s" % MODELS_PATH)

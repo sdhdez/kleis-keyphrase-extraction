@@ -139,6 +139,51 @@ def filter_keyphrases_brat(raw_ann):
                                      "tokens-indices": []}
     return keyphrases
 
+def filter_keyphrases_acl_xml(root_xml_content, text_nodes):
+    """Receive raw content in XML ACL-RD-TEC 2.0 format and return keyphrases"""
+    # Dict with keyphrases info
+    keyphrases = {}
+    # List of strings (keyphrases)
+    keyphrases_list = []
+    # Iter over annotated terms
+    for i, term in enumerate(root_xml_content.iter("term"), 1):
+        # Add annotated keyphrase in dict
+        keyphrases["T" + str(i)] = {"keyphrase-text": term.text,
+                                    "keyphrase-label": term.get("class"),
+                                    # There is not span
+                                    "keyphrase-span": None,
+                                    "tokens-indices": []}
+        # Add text from term to list of keyphrases
+        keyphrases_list.append(term.text)
+    # Number of keyphrases found
+    kp_found = 0
+    # Content of the document
+    text_content = ""
+    # Iter over sentence nodes from XML 
+    for sentence in text_nodes:
+        # Iter over nodes in sentence
+        for chunk in sentence:
+            # Add text node (chunk) to text content
+            text_content += chunk
+            # If text node match the first keyphrase in list
+            if keyphrases_list and keyphrases_list[0] == chunk:
+                # One keyphrase found
+                kp_found += 1
+                # Set end span
+                span_end = len(text_content)
+                # Set start span
+                span_start = span_end - len(chunk)
+                # Add span to corresponding keyphrase
+                keyphrases["T" + str(kp_found)]["keyphrase-span"] = (span_start, span_end)
+                # Removes from list the found keyphrase
+                keyphrases_list.pop(0)
+        # Add space between sentences
+        text_content += " "
+    if keyphrases_list:
+        print("+++ Keyphrases not found", keyphrases_list)
+    # Return keyphrases and text content (removing last space)
+    return keyphrases, text_content if not text_content else  text_content[:-1]
+
 def parse_brat_content(brat_content, lang="en"):
     """Receive raw content in brat format and
     return list with parsed annotations"""
@@ -167,37 +212,56 @@ def parse_brat_content(brat_content, lang="en"):
     return tags, keyphrases
 
 def normalize_acl_xml(text_xml):
-    """Receives a XML string and strip spaces"""
+    """Receive a XML string and strip spaces"""
     stripped_text_xml = ""
+    # Iter over xml text spliting by Tab character
     for line in text_xml.split("\t"):
+        # Remove spaces (malformed XML)
         stripped_line = line.strip()
+        # If not empty
         if stripped_line:
+            # Remove spaces betweent tags (malformed XML) 
             stripped_text_xml += stripped_line.replace("<S>         <term", "<S><term")
     return stripped_text_xml
+
+def text_nodes_acl_xml(root_xml_content):
+    """Receive XML object and return list of lists of strings"""
+    text_nodes = []
+    # Iter over sentences
+    for sentence in root_xml_content.iter("S"):
+        # Get text nodes from sentence
+        sentence_text = list(sentence.itertext())
+        # Add text nodes to list
+        text_nodes.append(sentence_text)
+    return text_nodes
 
 def parse_acl_xml_content(xml_content, lang="en"):
     """Receive raw content in XML ACL-RD-TEC-2.0 format and
     return list with parsed annotations"""
     root_xml_content = ET.fromstring(normalize_acl_xml(xml_content["xml"]))
-    terms = [("T" + str(i),
-             term.text,
-             term.get("class")
-             ) for i, term in enumerate(root_xml_content.iter("term"), 1)]
-    print(terms)
-    for sentence in root_xml_content.iter("S"):
-        ET.dump(sentence)
-        sentence_text = list(sentence.itertext())
-        print(sentence_text)
-    text_content = " ".join("".join(s.itertext()) for s in root_xml_content.iter("S")) 
-    print(text_content)
+    text_nodes = text_nodes_acl_xml(root_xml_content)
+    # Annotated keyphrases
+    keyphrases, text_content = filter_keyphrases_acl_xml(root_xml_content, text_nodes)
     if lang == "en":
         # Tokenizing
         tokens, tokens_span = tokenize_en(text_content)
         # Tagging
         tags = tag_text_en(tokens, tokens_span)
-        # Annotated keyphrases
-        # keyphrases = filter_keyphrases_acl_xml(text_content)
-    return tags, None
+        # For each tagged token (merge with similar code above)
+        for tag_i, tag in enumerate(tags):
+            # Get token span
+            token_start, token_end = tag[2]
+            # For each keyphrase
+            for keyphrase_key in keyphrases:
+                # Get span
+                keyphrase_start, keyphrase_end = keyphrases[keyphrase_key]["keyphrase-span"]
+                # If token belongs to keyphrase
+                if token_start >= keyphrase_start and token_end <= keyphrase_end:
+                    # Add id of keyphrase to token
+                    tag[3].append(keyphrase_key)
+                    # Add token index to keyphrase
+                    keyphrases[keyphrase_key]["tokens-indices"].append(tag_i)
+    return tags, keyphrases
 
 def preprocess_dataset_brat(raw_dataset, lang="en"):
     """Receives raw dataset and adds pre-processed dataset in brat format"""

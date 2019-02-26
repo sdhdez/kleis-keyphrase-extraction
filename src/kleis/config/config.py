@@ -46,14 +46,15 @@ CORPUS = {
         "format-description": "XML",
         "url": "https://github.com/languagerecipes/acl-rd-tec-2.0/",
         "dataset": {
-            "train-labeled": CORPUS_ACLRDTEC20_PATH + \
-                "distribution/annoitation_files/dummyannon/",
+            "train-labeled-annotator1": CORPUS_ACLRDTEC20_PATH + \
+                "distribution/annoitation_files/annotator1/",
+            "train-labeled-annotator2": CORPUS_ACLRDTEC20_PATH + \
+                "distribution/annoitation_files/annotator2/",
             "train-unlabeled": None,
             "dev-labeled": None,
             "dev-unlabeled": None,
             "test-unlabeled": None,
-            "test-labeled": CORPUS_ACLRDTEC20_PATH + \
-                "distribution/annoitation_files/annotator2/"
+            "test-labeled": None
             },
         "options": {}
         },
