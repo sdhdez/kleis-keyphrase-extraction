@@ -204,3 +204,7 @@ class Corpus:
         if post_processing:
             keyphrases = kl.post_processing(keyphrases)
         return keyphrases
+
+    def eval(self, method="micro-average"):
+        """Evaluate a model using micro-average on the testing dataset"""
+        
