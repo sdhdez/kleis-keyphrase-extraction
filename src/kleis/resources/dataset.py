@@ -4,11 +4,13 @@ Module to load corpus
 
 """
 import os
+import sys
 from pathlib import Path
 import pickle
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tag.perceptron import PerceptronTagger
 import xml.etree.ElementTree as ET
+import re
 
 from kleis.config.config import CORPUS, CORPUS_DEFAULT,\
                                 SEMEVAL2017, ACLRDTEC20,\
@@ -48,23 +50,17 @@ def path_exists(path):
         it_exists = path.exists()
     return it_exists
 
-def get_corpus_paths(corpus):
-    """Return dictionary with existing paths"""
-    valid_paths = {}
-    for name in corpus:
-        if path_exists(corpus[name]):
-            valid_paths[name] = corpus[name]
-    return valid_paths
-
 def load_config_corpus(name=None):
     """Return existing paths of the corpus"""
-    corpus_paths = None
-    if name is None or (isinstance(name, str) and name in CORPUS):
-        corpus = CORPUS[name] if name is not None else CORPUS_DEFAULT
-        if isinstance(corpus, dict) and "dataset" in corpus \
-                and isinstance(corpus["dataset"], dict):
-            corpus_paths = get_corpus_paths(corpus["dataset"])
-    return corpus_paths
+    corpus_config = None
+    # If name is str and is defined in CORPUS
+    corpus = CORPUS[name] if (isinstance(name, str) \
+        and name in CORPUS) else CORPUS_DEFAULT
+    # If corpus is dict and has a dataset 
+    if isinstance(corpus, dict) and "dataset" in corpus \
+        and isinstance(corpus["dataset"], dict):
+        corpus_config = corpus["dataset"]
+    return corpus_config
 
 def load_corpus(name=None):
     """Return corpus object"""
@@ -139,15 +135,22 @@ def filter_keyphrases_brat(raw_ann):
                                      "tokens-indices": []}
     return keyphrases
 
-def filter_keyphrases_acl_xml(root_xml_content, text_nodes):
+def filter_keyphrases_acl_xml(root_xml_content, text_nodes, exclude_title=True):
     """Receive raw content in XML ACL-RD-TEC 2.0 format and return keyphrases"""
     # Dict with keyphrases info
     keyphrases = {}
     # List of strings (keyphrases)
     keyphrases_list = []
+    # Used to give consistency on the ACL-RD-TEC corpus.
+    if exclude_title:
+        # Get first section element to exclude annotations on titles
+        element = root_xml_content.find("Section")
+    else:
+        # Include title annotations
+        element = root_xml_content
     # Iter over annotated terms
-    for i, term in enumerate(root_xml_content.iter("term"), 1):
-        # Add annotated keyphrase in dict
+    for i, term in enumerate(element.iter("term"), 1):
+        # Add annotated keyphrase to dict
         keyphrases["T" + str(i)] = {"keyphrase-text": term.text,
                                     "keyphrase-label": term.get("class"),
                                     # There is not span
@@ -180,7 +183,7 @@ def filter_keyphrases_acl_xml(root_xml_content, text_nodes):
         # Add space between sentences
         text_content += " "
     if keyphrases_list:
-        print("+++ Keyphrases not found", keyphrases_list)
+        print("Info: Keyphrases didn't match. Check your XML file.", keyphrases_list, file=sys.stderr)
     # Return keyphrases and text content (removing last space)
     return keyphrases, text_content if not text_content else  text_content[:-1]
 
@@ -214,13 +217,19 @@ def parse_brat_content(brat_content, lang="en"):
 def normalize_acl_xml(text_xml):
     """Receive a XML string and strip spaces"""
     stripped_text_xml = ""
+    # If there is not a sentence marked with <S></S>
+    if text_xml.find("<S>") < 0:
+        # Special case for ACL-RD-TEC 2.0
+        text_xml = re.sub(r'</SectionTitle>(\t+)*', '</SectionTitle>\t<S>', text_xml)
+        text_xml = re.sub(r'(\s*)</Section>', r'</S>\1</Section>', text_xml)
     # Iter over xml text spliting by Tab character
     for line in text_xml.split("\t"):
         # Remove spaces (malformed XML)
         stripped_line = line.strip()
         # If not empty
         if stripped_line:
-            # Remove spaces betweent tags (malformed XML) 
+            # Remove spaces betweent tags (malformed XML)
+            # Special case for ACL-RD-TEC 2.0
             stripped_text_xml += stripped_line.replace("<S>         <term", "<S><term")
     return stripped_text_xml
 
@@ -261,7 +270,8 @@ def parse_acl_xml_content(xml_content, lang="en"):
                     tag[3].append(keyphrase_key)
                     # Add token index to keyphrase
                     keyphrases[keyphrase_key]["tokens-indices"].append(tag_i)
-    return tags, keyphrases
+    # return tags, keyphrases and text content (XML)
+    return tags, keyphrases, text_content
 
 def preprocess_dataset_brat(raw_dataset, lang="en"):
     """Receives raw dataset and adds pre-processed dataset in brat format"""
@@ -276,11 +286,14 @@ def preprocess_dataset_acl_xml(raw_dataset, lang="en"):
     """Receives raw dataset and adds pre-processed dataset in XML format 
     used in the ACL-RD-TEC-2.0"""
     for key in raw_dataset:
-        tags, keyphrases = parse_acl_xml_content(raw_dataset[key]["raw"], lang=lang)
+        # tags, keyphrases, text_content (needed for ACL-RRD-TEC)
+        tags, keyphrases, text_content = parse_acl_xml_content(raw_dataset[key]["raw"], lang=lang)
         # Add tagged tokens with ids of keyphrases to dataset
         raw_dataset[key]["tags"] = tags
         # Add keyphrases with indices of tokens to dataset
         raw_dataset[key]["keyphrases"] = keyphrases
+        # Add text content to the dataset
+        raw_dataset[key]["raw"]["txt"] = text_content
 
 def preprocess_dataset(raw_dataset, lang="en", dataset_format="brat"):
     """Receives raw dataset and adds pre-processed dataset"""
@@ -608,3 +621,26 @@ def keyphrase_span(keyphrase):
     """Receive keyphrase and return label"""
     _, (_, start_end), _ = keyphrase
     return start_end
+
+def microaverage(spans, beta=1.0):
+    """Receive list of spans [(list_extracted, list_annotated), ... ] 
+    and return the micro-average (precision, recall, F1)"""
+    beta2 = beta**2
+    sum_tp = 0
+    sum_tp_fp = 0
+    sum_tp_fn = 0
+    # For each result
+    for selected, relevants in spans:
+        # TP
+        sum_tp += len(selected & relevants)
+        # TP + FP
+        sum_tp_fp += len(selected)
+        # TP + FN
+        sum_tp_fn += len(relevants)
+    # Precision
+    ma_precision = (sum_tp/sum_tp_fp) if sum_tp_fp > 0 else float('Inf')
+    # Recall
+    ma_recall = sum_tp/sum_tp_fn if sum_tp_fn > 0 else float('Inf')
+    # F_1
+    ma_f1 = (1 + beta2)*(ma_precision*ma_recall)/((beta2 * ma_precision) + ma_recall)
+    return ma_precision, ma_recall, ma_f1

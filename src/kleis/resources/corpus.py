@@ -3,6 +3,7 @@
 Generic class to load corpus.
 
 """
+import sys
 import copy
 import kleis.resources.dataset as kl
 from kleis.methods import crf as kcrf
@@ -12,6 +13,7 @@ class Corpus:
     _lang = "en"
     _encoding = "utf-8"
     _name = None
+    _subname = None
     _config = None
     _train = None
     _dev = None
@@ -28,14 +30,14 @@ class Corpus:
     _filter_min_count = 3
 
     def __init__(self):
-        self._config = kl.load_config_corpus(name=self.name)
+        self.config = kl.load_config_corpus(name=self.name)
         # self.load_train()
         # self.load_dev()
         # self.load_test()
         # self.training()
         # self.load_pos_sequences()
 
-    def load_pos_sequences(self, filter_min_count=3):
+    def load_pos_sequences(self, filter_min_count=1):
         """Load PoS sequences"""
         self._filter_min_count = filter_min_count
         # Load pos sequences
@@ -59,10 +61,53 @@ class Corpus:
         """Return corpus name"""
         return self._name
 
+    @name.setter
+    def name(self, name):
+        """Set corpus name"""
+        self._name = name
+    
+    @name.deleter
+    def name(self):
+        """Delete corpus name"""
+        del self._name
+
+    @property
+    def subname(self):
+        """Return subname"""
+        return self._subname if self._subname else ""
+    
+    @subname.setter
+    def subname(self, subname):
+        """Set subname"""
+        self._subname = subname
+
+    @subname.deleter 
+    def subname(self):
+        """Delete subname"""
+        del self._subname
+
+    @property
+    def fullname(self):
+        """Return fullname"""
+        return self.name + ("-" + self.subname if self.subname else "")
+
     @property
     def config(self):
         """Return corpus config"""
         return self._config
+
+    @config.setter
+    def config(self, config):
+        """Return corpus config"""
+        self._config = config
+
+    def option_in_cfg(self, option):
+        """Get option from config"""
+        if option in self.config:
+            return self.config[option]
+        else:
+            print("Option config[%s] doesn't exists (%s)." % (option, self.name), file=sys.stderr)
+            return None
 
     @property
     def train(self):
@@ -108,7 +153,7 @@ class Corpus:
 
     @property
     def pos_sequences(self):
-        """Placeholder to load pos sequences"""
+        """Return pos sequences"""
         return {str(key): value \
                 for key, value in filter(lambda ps: ps[1]["count"] >= self._filter_min_count,
                                          self._pos_sequences.items())}
@@ -117,12 +162,19 @@ class Corpus:
     def pos_sequences(self, dataset):
         """Load PoS sequences from dataset, using format
         returned by kl.parse_brat_content()"""
-        self._pos_sequences = kl.load_pos_sequences(dataset, name=self.name)
+        self._pos_sequences = kl.load_pos_sequences(dataset, name=self.fullname)
 
     @pos_sequences.deleter
     def pos_sequences(self):
         """Placeholder to load pos sequences"""
         del self._pos_sequences
+
+    def filtering_counts(self):
+        """Return filtering counts"""
+        if self._pos_sequences is None:
+            print("Warning: There aren't PoS tag sequences loaded. Use self.load_pos_sequences().", file=sys.stderr)
+            return []
+        return sorted(list({posseqs['count'] for posseqs in self._pos_sequences.values()}))
 
     @property
     def annotated_candidates_spans(self):
@@ -172,7 +224,7 @@ class Corpus:
         self._generic_label = generic_label
         self.annotated_candidates = self.annotated_candidates_spans
         model_file_name = "%s.%s.%s.%s.ctx%s.lbl%s.%s" % \
-            (self._name,
+            (self.fullname,
              self._filter_min_count,
              self._features_method,
              self._tagging_notation.lower(),
@@ -205,6 +257,23 @@ class Corpus:
             keyphrases = kl.post_processing(keyphrases)
         return keyphrases
 
-    def eval(self, method="micro-average"):
+    def eval(self, dataset=None, method="micro-average", beta=1.0, post_processing=True):
         """Evaluate a model using micro-average on the testing dataset"""
-        
+        # Set dataset
+        if dataset is None:
+            if self.test is not None:
+                dataset = self.test
+        # Save spans from extracted and annotated keyphrases
+        spans = []
+        # Extract keyphrases and evaluate
+        for key in dataset:
+            selected_elements = {kp[1][1] for kp in self.label_text(dataset[key]["raw"]["txt"], 
+                                                                    post_processing=post_processing)}
+            relevant_elements = {kp['keyphrase-span'] for kp in dataset[key]["keyphrases"].values()}
+            # List of results
+            spans.append((selected_elements, relevant_elements))
+        # If micro-average
+        if method == "micro-average":
+            # Evaluate
+            precision, recall, f1 = kl.microaverage(spans, beta=beta)
+        return precision, recall, f1

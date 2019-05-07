@@ -31,7 +31,7 @@ def pycrfsuite_train(annotated_candidates, name="crfmodel.pycrfsuite"):
         os.mkdir(MODELS_PATH)
     model = MODELS_PATH + name
     if not kl.path_exists(model):
-        print("Info: Model not found %s" % model)
+        print("Info: Model not found %s" % model, file=sys.stderr)
         features, labels = [], []
         for candidates in annotated_candidates.values():
             candidate_features, candidate_labels = crf_preprocess_candidates(candidates)
