@@ -4,6 +4,7 @@ Default corpus configs.
 
 """
 import sys
+import os
 import inspect
 from pathlib import Path
 
@@ -18,8 +19,8 @@ KPEXTDATA_PATH = str(Path(inspect.getfile(kleis_data)).parent)
 DEFAULT_CORPUS_PATH = "corpus/" + SEMEVAL2017 + "/"
 if Path("./kleis_data/" + DEFAULT_CORPUS_PATH).exists():
     CORPUS_PATH = "./kleis_data/" + DEFAULT_CORPUS_PATH
-elif Path("~/kleis_data/" + DEFAULT_CORPUS_PATH).exists():
-    CORPUS_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
+elif Path(os.path.expanduser("~/kleis_data/" + DEFAULT_CORPUS_PATH)).exists():
+    CORPUS_PATH = os.path.expanduser("~/kleis_data/" + DEFAULT_CORPUS_PATH)
 elif Path(KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH).exists():
     CORPUS_PATH = KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH
 else:
@@ -31,7 +32,7 @@ else:
     print("        + ~/kleis_data/%s" % DEFAULT_CORPUS_PATH, file=sys.stderr)
     print("        + %s" % (KPEXTDATA_PATH + "/" + DEFAULT_CORPUS_PATH), file=sys.stderr)
     print("    - You can use pre-trained models.", file=sys.stderr)
-    CORPUS_PATH = "~/kleis_data/" + DEFAULT_CORPUS_PATH
+    CORPUS_PATH = os.path.expanduser("~/kleis_data/" + DEFAULT_CORPUS_PATH)
     print("Default: ", Path(CORPUS_PATH))
 
 CORPUS = {
@@ -63,8 +64,8 @@ CORPUS_ACL_RD_TEC_2_0 = CORPUS[ACLRDTEC]
 DEFAULT_MODELS_PATH = "models/"
 if Path("./kleis_data/" + DEFAULT_MODELS_PATH).exists():
     MODELS_PATH = "./kleis_data/" + DEFAULT_MODELS_PATH
-elif Path("~/kleis_data/" + DEFAULT_MODELS_PATH).exists():
-    MODELS_PATH = "~/kleis_data/" + DEFAULT_MODELS_PATH
+elif Path(os.path.expanduser("~/kleis_data/" + DEFAULT_MODELS_PATH)).exists():
+    MODELS_PATH = os.path.expanduser("~/kleis_data/" + DEFAULT_MODELS_PATH)
 elif Path(KPEXTDATA_PATH + "/" + DEFAULT_MODELS_PATH).exists():
     MODELS_PATH = KPEXTDATA_PATH + "/" + DEFAULT_MODELS_PATH
 else:
@@ -80,8 +81,8 @@ else:
 DEFAULT_TRAIN_PATH = "train/"
 if Path("./kleis_data/" + DEFAULT_TRAIN_PATH).exists():
     TRAIN_PATH = "./kleis_data/" + DEFAULT_TRAIN_PATH
-elif Path("~/kleis_data/" + DEFAULT_TRAIN_PATH).exists():
-    TRAIN_PATH = "~/kleis_data/" + DEFAULT_TRAIN_PATH
+elif Path(os.path.expanduser("~/kleis_data/" + DEFAULT_TRAIN_PATH)).exists():
+    TRAIN_PATH = os.path.expanduser("~/kleis_data/" + DEFAULT_TRAIN_PATH)
 elif Path(KPEXTDATA_PATH + "/" + DEFAULT_TRAIN_PATH).exists():
     TRAIN_PATH = KPEXTDATA_PATH + "/" + DEFAULT_TRAIN_PATH
 else:
