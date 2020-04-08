@@ -61,7 +61,7 @@ def load_config_corpus(name=None):
         corpus = CORPUS[name] if name is not None else CORPUS_DEFAULT
         if isinstance(corpus, dict) and "dataset" in corpus \
                 and isinstance(corpus["dataset"], dict):
-            corpus_paths = get_corpus_paths(corpus["dataset"])
+            corpus_paths = corpus["dataset"]
     return corpus_paths
 
 def load_corpus(name=None):
