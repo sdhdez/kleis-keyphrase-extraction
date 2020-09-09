@@ -74,6 +74,6 @@ jupyter lab
 
 ## Further information
 
-This method uses a CRFs model (Conditional Random Fields) to label keyphrases in text, the model is trained with keyphrase candidates filtered with Part-of-Spech tag sequences. It is based on the method described [here](https://aclanthology.coli.uni-saarland.de/papers/S17-2174/s17-2174), but with a better performance. Please, feel free to send us comments or questions.
+This method uses a CRFs model (Conditional Random Fields) to label keyphrases in text, the model is trained with keyphrase candidates filtered with Part-of-Spech tag sequences. It is based on the method described [here](https://www.aclweb.org/anthology/S17-2174/), but with a better performance. Please, feel free to send us comments or questions.
 
 In this version we use [python-crfsuite](https://github.com/scrapinghub/python-crfsuite). 
